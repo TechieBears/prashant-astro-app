@@ -8,17 +8,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#4c669f",
-        secondary: "#F98D07",
-        accent: "#192f6a",
-        danger: "#ff4d4f",
-        success: "#52c41a",
-        warning: "#faad14",
-        muted: "#d1d5db",
-        gray : "#D9D9D9",
+        background: "#FEF8EF",
+        primary: "#FF8835",
+        primary2: "#FF5858",
+        secondary: "#FFBF12",
+        text1: "#1D293D",
+        text2: "#62748E",
       },
       fontFamily: {
-        poppins: ["Poppins", "sans-serif"],
+        prociono: ["Prociono-Regular"],
+        poppins: ["Poppins-Regular"],
+        poppinsMedium: ["Poppins-Medium"],
       },
     },
   },
