@@ -2,11 +2,16 @@ import './global.css';
 import { View, Text } from 'react-native'
 import React from 'react'
 import SplashScreen from './src/screens/SplashScreen';
+import OnboardingScreen from './src/screens/Onboarding/index';
+import Login from './src/screens/Auth/Login';
+import Register from './src/screens/Auth/Register';
+import ForgotPassword from './src/screens/Auth/ForgotPassword';
+
 
 export default function App() {
   return (
     <View className='flex-1'>
-      <SplashScreen />
+      <ForgotPassword />
     </View>
   )
 }
