@@ -6,12 +6,13 @@ import OnboardingScreen from './src/screens/Onboarding/index';
 import Login from './src/screens/Auth/Login';
 import Register from './src/screens/Auth/Register';
 import ForgotPassword from './src/screens/Auth/ForgotPassword';
+import Details from './src/screens/Product/Details';
 
 
 export default function App() {
   return (
     <View className='flex-1'>
-      <ForgotPassword />
+      <Details />
     </View>
   )
 }
