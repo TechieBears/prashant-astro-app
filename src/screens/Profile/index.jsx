@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 
-const ProfileScreen = () => {
+const Profile = () => {
   return (
     <View className="flex-1 bg-background justify-center items-center px-6">
       <Text className="text-text1 font-poppinsMedium text-2xl mb-4">
@@ -14,4 +14,4 @@ const ProfileScreen = () => {
   );
 };
 
-export default ProfileScreen;
+export default Profile;
