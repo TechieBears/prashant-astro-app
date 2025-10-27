@@ -1,20 +1,23 @@
 import './global.css';
-import { View, Text } from 'react-native'
-import React from 'react'
-import SplashScreen from './src/screens/SplashScreen';
-import OnboardingScreen from './src/screens/Onboarding/index';
-import Login from './src/screens/Auth/Login';
-import Register from './src/screens/Auth/Register';
-import ForgotPassword from './src/screens/Auth/ForgotPassword';
-import Details from './src/screens/Product/Details';
+import React from 'react';
+import 'react-native-gesture-handler';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './src/redux/slices/authSlice';
+import RootNavigator from './src/navigation/RootNavigator';
 
+const store = configureStore({
+  reducer: {
+    auth: authReducer,
+  },
+});
 
 export default function App() {
   return (
-    <View className='flex-1'>
-      <Details />
-    </View>
-  )
+    <Provider store={store}>
+      <RootNavigator />
+    </Provider>
+  );
 }
 
 

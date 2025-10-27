@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux';
 import { GoogleIcon, Facebook01Icon, AppleIcon, ViewIcon, ViewOffSlashIcon } from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
 import TextInput from '../../components/Inputs/TextInput';
+import { setUser } from '../../redux/slices/authSlice';
 
 const RadioButton = ({ selected, onPress, label }) => {
   return (
@@ -37,6 +39,7 @@ const SocialButton = ({ icon, bgColor = 'bg-white', onPress }) => {
 };
 
 const Register = ({ navigation }) => {
+  const dispatch = useDispatch();
   const { control, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
       fullName: '',
@@ -55,7 +58,11 @@ const Register = ({ navigation }) => {
 
   const onSubmit = (data) => {
     console.log('Register data:', { ...data, gender });
-    // Handle registration logic here
+    // Simulate successful registration
+    dispatch(setUser({
+      user: { email: data.email, name: data.fullName, phone: data.phoneNumber, gender },
+      token: 'mock-token-123'
+    }));
   };
 
   const handleGoogleLogin = () => {

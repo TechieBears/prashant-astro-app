@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux';
 import { Mail01Icon, LockPasswordIcon, GoogleIcon, Facebook01Icon, AppleIcon, ViewIcon, ViewOffSlashIcon } from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
 import TextInput from '../../components/Inputs/TextInput';
+import { setUser } from '../../redux/slices/authSlice';
 
 const Checkbox = ({ checked, onPress, label }) => {
   return (
@@ -37,6 +39,7 @@ const SocialButton = ({ icon, bgColor = 'bg-white', onPress }) => {
 };
 
 const Login = ({ navigation }) => {
+  const dispatch = useDispatch();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       email: '',
@@ -49,7 +52,11 @@ const Login = ({ navigation }) => {
 
   const onSubmit = (data) => {
     console.log('Login data:', data);
-    // Handle login logic here
+    // Simulate successful login
+    dispatch(setUser({
+      user: { email: data.email, name: 'User' },
+      token: 'mock-token-123'
+    }));
   };
 
   const handleGoogleLogin = () => {
