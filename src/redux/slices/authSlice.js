@@ -4,6 +4,8 @@ const initialState = {
   user: null,
   token: null,
   isAuthenticated: false,
+  skip: false,
+  showSplash: true,
 };
 
 const authSlice = createSlice({
@@ -20,8 +22,14 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
     },
+    setSkip: (state, action) => {
+      state.skip = action.payload;
+    },
+    hideSplash: (state) => {
+      state.showSplash = false;
+    },
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, setSkip, hideSplash } = authSlice.actions;
 export default authSlice.reducer;
