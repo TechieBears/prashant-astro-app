@@ -1,34 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
+import { View, SafeAreaView, ScrollView, StatusBar } from 'react-native';
+import BannerSlider from '../../components/Sliders';
 
-const HomeScreen = ({ navigation }) => {
-  const dispatch = useDispatch();
-
-  const handleLogout = () => {
-    dispatch(logout());
-  };
-
+const Home = ({ navigation }) => {
   return (
-    <View className="flex-1 bg-background justify-center items-center px-6">
-      <Text className="text-text1 font-poppinsMedium text-2xl mb-4">
-        Welcome to AstroGuid
-      </Text>
-      <Text className="text-text2 font-poppins text-base text-center mb-8">
-        You are now authenticated and can access all features
-      </Text>
-      
-      <TouchableOpacity
-        onPress={handleLogout}
-        className="bg-primary2 px-6 py-3 rounded-lg"
+    <SafeAreaView className="flex-1 bg-background">
+-
+      {/* Scrollable Content */}
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Text className="text-white font-poppinsMedium text-base">
-          Logout
-        </Text>
-      </TouchableOpacity>
-    </View>
+        
+        {/* 🔹 Header Section */}
+        <View className="mt-4">
+          {/* <Header /> */}
+        </View>
+
+        {/* 🔹 Main Content Section */}
+        <View className="mt-6">
+          <BannerSlider />
+        </View>
+
+        {/* 🔹 Spacer */}
+        <View className="h-16" />
+      </ScrollView>
+
+      {/* 🔹 Floating Cart Button */}
+      <View className="absolute bottom-10 left-1/2 -translate-x-1/2">
+        {/* <FloatingCartButton /> */}
+      </View>
+    </SafeAreaView>
   );
 };
 
-export default HomeScreen;
+export default Home;

@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
-import { View, Dimensions, TouchableOpacity } from 'react-native';
-import Carousel from 'react-native-snap-carousel';
+import React, { useState } from 'react';
+import { View, Dimensions, TouchableOpacity, Text } from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
 import FastImage from 'react-native-fast-image';
-import { ArrowLeft, ArrowRight } from 'lucide-react-native'; // optional icons
-import { Text } from 'react-native';
+import { ArrowLeft01Icon, ArrowRight01Icon } from 'hugeicons-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -15,58 +14,68 @@ const dummyImages = [
 ];
 
 const BannerSlider = () => {
-  const carouselRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const renderItem = ({ item }) => (
-    <FastImage
-      source={{ uri: item.image }}
-      style={{ width: '100%', height: 200, borderRadius: 12 }}
-      resizeMode={FastImage.resizeMode.cover}
-    />
-  );
-
-  const handlePrev = () => {
-    const newIndex = activeIndex === 0 ? dummyImages.length - 1 : activeIndex - 1;
-    carouselRef.current?.snapToItem(newIndex);
-  };
-
-  const handleNext = () => {
-    const newIndex = activeIndex === dummyImages.length - 1 ? 0 : activeIndex + 1;
-    carouselRef.current?.snapToItem(newIndex);
-  };
+  const itemWidth = width - 40;
 
   return (
-    <View className="relative mt-4">
+    <View style={{ marginTop: 16, position: 'relative' }}>
       <Carousel
-        ref={carouselRef}
+        width={itemWidth}
+        height={200}
         data={dummyImages}
-        renderItem={renderItem}
-        sliderWidth={width}
-        itemWidth={width - 40}
         loop
         onSnapToItem={(index) => setActiveIndex(index)}
+        renderItem={({ item }) => (
+          <FastImage
+            source={{ uri: item.image }}
+            style={{ width: '100%', height: 200, borderRadius: 12 }}
+            resizeMode={FastImage.resizeMode.cover}
+          />
+        )}
       />
 
       {/* Navigation buttons */}
-      <View className="absolute top-1/2 w-full flex-row justify-between px-4">
+      <View
+        style={{
+          position: 'absolute',
+          top: '50%',
+          width: '100%',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+        }}
+      >
         <TouchableOpacity
-          onPress={handlePrev}
-          className="bg-black/40 p-2 rounded-full"
+          onPress={() =>
+            setActiveIndex((prev) => (prev === 0 ? dummyImages.length - 1 : prev - 1))
+          }
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: 999 }}
         >
-          <ArrowLeft color="white" size={20} />
+          <ArrowLeft01Icon color="white" size={20} />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={handleNext}
-          className="bg-black/40 p-2 rounded-full"
+          onPress={() =>
+            setActiveIndex((prev) => (prev === dummyImages.length - 1 ? 0 : prev + 1))
+          }
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: 999 }}
         >
-          <ArrowRight color="white" size={20} />
+          <ArrowRight01Icon color="white" size={20} />
         </TouchableOpacity>
       </View>
 
       {/* Pagination text */}
-      <View className="absolute bottom-2 right-4 bg-black/40 px-3 py-1 rounded-full">
-        <Text className="text-white text-xs">
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 8,
+          right: 16,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 999,
+        }}
+      >
+        <Text style={{ color: 'white', fontSize: 12 }}>
           {activeIndex + 1}/{dummyImages.length}
         </Text>
       </View>
