@@ -22,7 +22,7 @@ const RadioButton = ({ selected, onPress, label }) => {
 
 const SocialButton = ({ icon, bgColor = 'bg-white', onPress }) => {
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={onPress}
       className={`w-16 h-16 rounded-full ${bgColor} items-center justify-center shadow-sm`}
       style={{
@@ -49,7 +49,7 @@ const Register = ({ navigation }) => {
       confirmPassword: '',
     }
   });
-  
+
   const [gender, setGender] = useState('Male');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -79,16 +79,16 @@ const Register = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView 
+      <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-6 pt-16">
+        <View className="flex-1 px-6 pt-16 justify-center">
           {/* Header */}
           <View className="items-center mb-8">
-            <Text className="text-4xl font-poppinsMedium text-text1 mb-3">
+            <Text className="text-4xl font-poppinsMedium text-text1 font-bold mb-3">
               Create Account
             </Text>
             <Text className="text-base font-poppins text-text2 text-center px-2 leading-6">
@@ -98,11 +98,10 @@ const Register = ({ navigation }) => {
 
           {/* Full Name Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Full Name*
-            </Text>
+
             <TextInput
               control={control}
+              label="Full Name *"
               name="fullName"
               placeholder="Enter full name"
               containerStyle="mb-0"
@@ -119,11 +118,10 @@ const Register = ({ navigation }) => {
 
           {/* Email Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Email *
-            </Text>
+
             <TextInput
               control={control}
+              label="Email *"
               name="email"
               placeholder="Enter email address"
               keyboardType="email-address"
@@ -142,11 +140,10 @@ const Register = ({ navigation }) => {
 
           {/* Phone Number Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Phone Number *
-            </Text>
+
             <TextInput
               control={control}
+              label="Phone Number *"
               name="phoneNumber"
               placeholder="Enter phone number"
               keyboardType="phone-pad"
@@ -188,66 +185,40 @@ const Register = ({ navigation }) => {
 
           {/* Create Password Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Create Password *
-            </Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3.5 bg-white flex-row items-center">
-              <View className="flex-1">
-                <TextInput
-                  control={control}
-                  name="password"
-                  placeholder="Enter password"
-                  secureTextEntry={!showPassword}
-                  containerStyle="mb-0"
-                  inputStyle="border-0 px-0 py-0"
-                  rules={{
-                    required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters'
-                    }
-                  }}
-                />
-              </View>
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <ViewIcon size={20} color="#62748E" />
-                ) : (
-                  <ViewOffSlashIcon size={20} color="#62748E" />
-                )}
-              </TouchableOpacity>
-            </View>
+            <TextInput
+              control={control}
+              label="Password *"
+              name="password"
+              placeholder="Enter password"
+              secureTextEntry={!showPassword}
+              containerStyle="mb-0"
+              inputStyle="border-0 px-0 py-0"
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters'
+                }
+              }}
+            />
           </View>
 
           {/* Confirm Password Input */}
           <View className="mb-6">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Confirm Password *
-            </Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3.5 bg-white flex-row items-center">
-              <View className="flex-1">
-                <TextInput
-                  control={control}
-                  name="confirmPassword"
-                  placeholder="Enter password"
-                  secureTextEntry={!showConfirmPassword}
-                  containerStyle="mb-0"
-                  inputStyle="border-0 px-0 py-0"
-                  rules={{
-                    required: 'Please confirm your password',
-                    validate: (value) => 
-                      value === password || 'Passwords do not match'
-                  }}
-                />
-              </View>
-              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                {showConfirmPassword ? (
-                  <ViewIcon size={20} color="#62748E" />
-                ) : (
-                  <ViewOffSlashIcon size={20} color="#62748E" />
-                )}
-              </TouchableOpacity>
-            </View>
+            <TextInput
+              control={control}
+              label="Confirm Password *"
+              name="confirmPassword"
+              placeholder="Enter password"
+              secureTextEntry={!showConfirmPassword}
+              containerStyle="mb-0"
+              inputStyle="border-0 px-0 py-0"
+              rules={{
+                required: 'Please confirm your password',
+                validate: (value) =>
+                  value === password || 'Passwords do not match'
+              }}
+            />
           </View>
 
           {/* Create Account Button */}
@@ -289,13 +260,13 @@ const Register = ({ navigation }) => {
               bgColor="bg-white"
               onPress={handleGoogleLogin}
             />
-            
+
             <SocialButton
               icon={<Facebook01Icon size={28} color="#FFFFFF" />}
               bgColor="bg-[#1877F2]"
               onPress={handleFacebookLogin}
             />
-            
+
             <SocialButton
               icon={<AppleIcon size={28} color="#FFFFFF" />}
               bgColor="bg-black"

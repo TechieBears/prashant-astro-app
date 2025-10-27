@@ -11,7 +11,7 @@ const ForgotPassword = ({ navigation }) => {
       email: '',
     }
   });
-  
+
   const [step, setStep] = useState(1); // 1: Email Input, 2: Success Message
   const [isLoading, setIsLoading] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
@@ -19,12 +19,12 @@ const ForgotPassword = ({ navigation }) => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     setSubmittedEmail(data.email);
-    
+
     try {
       // Simulate API call to send reset link
       // Replace this with your actual API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // If successful, move to step 2
       setStep(2);
     } catch (error) {
@@ -41,9 +41,10 @@ const ForgotPassword = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-6 pt-12">
+      
+      <View className="flex-1 px-6 pt-12 justify-center">
         {/* Back Button */}
-        <TouchableOpacity 
+        {/* <TouchableOpacity
           onPress={handleBackToLogin}
           className="flex-row items-center mb-8"
         >
@@ -51,14 +52,14 @@ const ForgotPassword = ({ navigation }) => {
           <Text className="text-text1 font-poppinsMedium text-base ml-2">
             Back to Login
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {step === 1 ? (
           // Step 1: Email Input
           <>
             {/* Header */}
             <View className="items-center mb-12">
-              <Text className="text-4xl font-poppinsMedium text-text1 mb-4">
+            <Text className="text-4xl font-poppinsMedium text-text1 font-bold mb-3">
                 Forgot Password
               </Text>
               <Text className="text-base font-poppins text-text2 text-center px-4 leading-6">
@@ -68,35 +69,26 @@ const ForgotPassword = ({ navigation }) => {
 
             {/* Email Input */}
             <View className="mb-8">
-              <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-                Email *
-              </Text>
-              <View className="border border-gray-300 rounded-lg px-4 py-3.5 bg-white flex-row items-center">
-                <Mail01Icon size={20} color="#62748E" />
-                <View className="flex-1 ml-3">
-                  <TextInput
-                    control={control}
-                    name="email"
-                    placeholder="Enter email address"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    containerStyle="mb-0"
-                    inputStyle="border-0 px-0 py-0"
-                    rules={{
-                      required: 'Email is required',
-                      pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Invalid email address'
-                      }
-                    }}
-                  />
-                </View>
-              </View>
-              {errors.email && (
-                <Text className="text-primary2 font-poppins text-xs mt-1">
-                  {errors.email.message}
-                </Text>
-              )}
+
+              <TextInput
+                control={control}
+                label={"Email Address *"}
+                name="email"
+                placeholder="Enter email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                containerStyle="mb-0"
+                inputStyle="border-0 px-0 py-0"
+                Icon={<Mail01Icon size={20} color="#62748E" />}
+                rules={{
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Invalid email address'
+                  }
+                }}
+              />
+
             </View>
 
             {/* Continue Button */}
@@ -124,19 +116,19 @@ const ForgotPassword = ({ navigation }) => {
               <View className="w-24 h-24 rounded-full bg-green-100 items-center justify-center mb-6">
                 <Text className="text-5xl">✉️</Text>
               </View>
-              
+
               <Text className="text-3xl font-poppinsMedium text-text1 mb-4 text-center">
                 Check Your Email
               </Text>
-              
+
               <Text className="text-base font-poppins text-text2 text-center px-4 leading-6 mb-2">
                 We have sent a password reset link to
               </Text>
-              
+
               <Text className="text-base font-poppinsMedium text-text1 text-center mb-4">
                 {submittedEmail}
               </Text>
-              
+
               <Text className="text-sm font-poppins text-text2 text-center px-6 leading-5">
                 Please check your inbox and click on the link to reset your password.
               </Text>
@@ -147,8 +139,8 @@ const ForgotPassword = ({ navigation }) => {
               <Text className="text-sm font-poppins text-text2 text-center leading-5">
                 Didn't receive the email? Check your spam folder or
               </Text>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 onPress={() => setStep(1)}
                 className="mt-2"
               >

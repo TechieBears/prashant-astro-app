@@ -22,7 +22,7 @@ const Checkbox = ({ checked, onPress, label }) => {
 
 const SocialButton = ({ icon, bgColor = 'bg-white', onPress }) => {
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={onPress}
       className={`w-16 h-16 rounded-full ${bgColor} items-center justify-center shadow-sm`}
       style={{
@@ -46,7 +46,7 @@ const Login = ({ navigation }) => {
       password: '',
     }
   });
-  
+
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -73,15 +73,15 @@ const Login = ({ navigation }) => {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView 
-        className="flex-1"
+      <ScrollView
+        className="flex-1 "
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 px-6 pt-16">
+        <View className="flex-1 px-6 pt-16 justify-center">
           {/* Header */}
           <View className="items-center mb-10">
-            <Text className="text-4xl font-poppinsMedium text-text1 mb-3">
+            <Text className="text-4xl font-poppinsMedium text-text1 font-bold mb-3">
               Login
             </Text>
             <Text className="text-base font-poppins text-text2 text-center px-4 leading-6">
@@ -91,82 +91,65 @@ const Login = ({ navigation }) => {
 
           {/* Email Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Email *
-            </Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3.5 bg-white flex-row items-center">
-              <Mail01Icon size={20} color="#62748E" />
-              <TextInput
-                control={control}
-                name="email"
-                placeholder="Enter email address"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                containerStyle="mb-0 flex-1"
-                inputStyle="border-0 px-3 py-0"
-                rules={{
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
-                  }
-                }}
-              />
-            </View>
-            {errors.email && (
-              <Text className="text-primary2 font-poppins text-xs mt-1">
-                {errors.email.message}
-              </Text>
-            )}
+            <TextInput
+              control={control}
+              name="email"
+              label="Email *"
+              placeholder="Enter email address"
+              keyboardType="email-address"
+              rules={{
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address',
+                },
+              }}
+              Icon={<Mail01Icon size={20} color="#62748E" />}
+              iconStyle="text-xl"
+              containerStyle="mb-4"
+              inputStyle="px-3 py-2"
+            />
           </View>
 
           {/* Password Input */}
           <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-2">
-              Password *
-            </Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3.5 bg-white flex-row items-center">
-              <LockPasswordIcon size={20} color="#62748E" />
-              <View className="flex-1 ml-3">
-                <TextInput
-                  control={control}
-                  name="password"
-                  placeholder="Enter password"
-                  secureTextEntry={!showPassword}
-                  containerStyle="mb-0"
-                  inputStyle="border-0 px-0 py-0"
-                  rules={{
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters'
-                    }
-                  }}
-                />
-              </View>
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
+
+            <TextInput
+              control={control}
+              name="password"
+              label="Password *"
+              placeholder="Enter password"
+              secureTextEntry={!showPassword}
+              Icon={<LockPasswordIcon size={20} color="#62748E" />}
+              rightIcon={
+                showPassword ? (
                   <ViewIcon size={20} color="#62748E" />
                 ) : (
                   <ViewOffSlashIcon size={20} color="#62748E" />
-                )}
-              </TouchableOpacity>
-            </View>
-            {errors.password && (
-              <Text className="text-primary2 font-poppins text-xs mt-1">
-                {errors.password.message}
-              </Text>
-            )}
+                )
+              }
+              rightIconOnPress={() => setShowPassword(!showPassword)}
+              containerStyle="mb-0"
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 6,
+                  message: 'Password must be at least 6 characters',
+                },
+              }}
+              iconStyle="text-xl"
+              inputStyle="px-3 py-2"
+            />
           </View>
 
           {/* Remember Me & Forgot Password */}
           <View className="flex-row justify-between items-center mb-8">
-            <Checkbox 
+            <Checkbox
               checked={rememberMe}
               onPress={() => setRememberMe(!rememberMe)}
               label="Remember me"
             />
-            
+
             <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
               <Text className="text-text1 font-poppins text-sm">
                 Forgot Password?
@@ -213,13 +196,13 @@ const Login = ({ navigation }) => {
               bgColor="bg-white"
               onPress={handleGoogleLogin}
             />
-            
+
             <SocialButton
               icon={<Facebook01Icon size={28} color="#FFFFFF" />}
               bgColor="bg-[#1877F2]"
               onPress={handleFacebookLogin}
             />
-            
+
             <SocialButton
               icon={<AppleIcon size={28} color="#FFFFFF" />}
               bgColor="bg-black"
