@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, PanResponder } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import {Home07Icon, HandPrayerIcon, ShoppingCart02Icon, ShoppingBag02Icon, UserIcon} from 'hugeicons-react-native'
+import { Home07Icon, HandPrayerIcon, ShoppingCart02Icon, ShoppingBag02Icon, UserIcon } from 'hugeicons-react-native'
 
 // Import existing screens
 import Home from '../screens/Home/index';
@@ -12,6 +12,8 @@ import Profile from '../screens/Profile';
 import EditProfile from '../screens/Profile/EditProfile';
 import Address from '../screens/Profile/Address/index';
 import AddUpdateAddress from '../screens/Profile/Address/AddUpdateAddress';
+import About from '../screens/Profile/About';
+import CustomerSupport from '../screens/Profile/CustomerSupport';
 
 
 const Tab = createBottomTabNavigator();
@@ -71,12 +73,12 @@ const CartBottomSheet = ({ visible, onClose }) => {
       onRequestClose={onClose}
     >
       <View className="flex-1 justify-end">
-        <TouchableOpacity 
+        <TouchableOpacity
           className="flex-1 bg-black opacity-50"
-          activeOpacity={1} 
+          activeOpacity={1}
           onPress={onClose}
         />
-        <Animated.View 
+        <Animated.View
           className="bg-white rounded-t-3xl max-h-[90%] min-h-[50%] shadow-lg"
           style={[{ transform: [{ translateY }] }]}
           {...panResponder.panHandlers}
@@ -120,15 +122,24 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
               <TouchableOpacity
                 key={index}
                 onPress={onPress}
-                className="flex-1 items-center justify-center"
+                className="flex-1 items-center "
               >
-                <View className="w-7 h-7 items-center justify-center">
-                  <Text className="text-lg opacity-60">
-                    {route.name === 'Home' && <Home07Icon color={isFocused ? '#FF8835' : 'gray'} />}
-                    {route.name === 'Service' && <HandPrayerIcon color={isFocused ? '#FF8835' : 'gray'} />}
-                    {route.name === 'Product' && <ShoppingBag02Icon color={isFocused ? '#FF8835' : 'gray'} />}
-                    {route.name === 'Profile' && <UserIcon color={isFocused ? '#FF8835' : 'gray'} />}
-                  </Text>
+                <View className="w-7 h-7 items-center ">
+                  <View className="flex-row  ">
+                    <View>
+                      <Text className="text-lg opacity-60">
+                        {route.name === 'Home' && <Home07Icon color={isFocused ? '#FF8835' : 'gray'} />}
+                        {route.name === 'Service' && <HandPrayerIcon color={isFocused ? '#FF8835' : 'gray'} />}
+                      </Text>
+
+                    </View>
+                    <View >
+                      <Text className="text-lg opacity-60">
+                        {route.name === 'Product' && <ShoppingBag02Icon color={isFocused ? '#FF8835' : 'gray'} />}
+                        {route.name === 'Profile' && <UserIcon color={isFocused ? '#FF8835' : 'gray'} />}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
                 {isFocused && (
                   <Text className="text-sm text-orange-500 mt-1 font-medium">{route.name}</Text>
@@ -143,16 +154,16 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           onPress={() => setCartVisible(true)}
           className="absolute top-[-30px]  left-1/2 transform -translate-x-1/2 items-center justify-center"
         >
-          <View style={{ borderRadius : 100 }} className="w-16 h-16 rounded-full bg-background justify-center items-center border-6 border-t border-gray-300">
+          <View style={{ borderRadius: 100 }} className="w-16 h-16 rounded-full bg-background justify-center items-center border-6 border-t border-gray-300">
             <ShoppingCart02Icon color={'gray'} />
           </View>
         </TouchableOpacity>
       </View>
 
       {/* Cart Bottom Sheet Modal */}
-      <CartBottomSheet 
-        visible={cartVisible} 
-        onClose={() => setCartVisible(false)} 
+      <CartBottomSheet
+        visible={cartVisible}
+        onClose={() => setCartVisible(false)}
       />
     </>
   );
@@ -165,6 +176,7 @@ const MainTabNavigator = () => {
       screenOptions={{
         headerShown: false,
       }}
+      initialRouteName='Home'
     >
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Service" component={Service} />
@@ -181,6 +193,8 @@ const AppNavigator = () => {
       <Stack.Screen name="EditProfile" component={EditProfile} />
       <Stack.Screen name="Address" component={Address} />
       <Stack.Screen name="AddUpdateAddress" component={AddUpdateAddress} />
+      <Stack.Screen name="About" component={About} />
+      <Stack.Screen name="CustomerSupport" component={CustomerSupport} />
     </Stack.Navigator>
   );
 };
