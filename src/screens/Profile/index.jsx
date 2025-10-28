@@ -20,14 +20,14 @@ import {
   Mail01Icon,
 } from 'hugeicons-react-native';
 
-export default function Profile() {
+export default function Profile({navigation}) {
   const menuItems = [
-    { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316' },
-    { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F' },
-    { icon: Location06Icon, label: 'My Address', color: '#00786F' },
-    { icon: PolicyIcon, label: 'Privacy Policy', color: '#62748E' },
-    { icon: HeadsetIcon, label: 'Customer Support', color: '#246DF2' },
-    { icon: InformationDiamondIcon, label: 'About Us', color: '#00B8DB' },
+    { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
+    { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F', redirect: 'MyOrders' },
+    { icon: Location06Icon, label: 'My Address', color: '#00786F', redirect: 'MyAddress' },
+    { icon: PolicyIcon, label: 'Privacy Policy', color: '#62748E', redirect: 'PrivacyPolicy' },
+    { icon: HeadsetIcon, label: 'Customer Support', color: '#246DF2', redirect: 'CustomerSupport' },
+    { icon: InformationDiamondIcon, label: 'About Us', color: '#00B8DB', redirect: 'AboutUs' },
   ];
 
   return (
@@ -80,6 +80,7 @@ export default function Profile() {
               <TouchableOpacity
                 key={index}
                 className="w-full mx-6 py-4 flex-row items-center justify-between border-b border-[#E2E8F0] active:bg-gray-50"
+                onPress={() => navigation.navigate(item.redirect)}
               >
                 <View className="flex-row items-center space-x-4">
                   <View className="mr-6">
