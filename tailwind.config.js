@@ -14,6 +14,7 @@ module.exports = {
         secondary: "#FFBF12",
         text1: "#1D293D",
         text2: "#62748E",
+        text3: "#272B35",
       },
       fontFamily: {
         prociono: ["Prociono-Regular"],

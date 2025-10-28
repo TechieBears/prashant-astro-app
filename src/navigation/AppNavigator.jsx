@@ -10,6 +10,9 @@ import Service from '../screens/Service/index';
 import Product from '../screens/Product/index';
 import Profile from '../screens/Profile';
 import EditProfile from '../screens/Profile/EditProfile';
+import Address from '../screens/Profile/Address/index';
+import AddUpdateAddress from '../screens/Profile/Address/AddUpdateAddress';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -176,6 +179,8 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
+      <Stack.Screen name="Address" component={Address} />
+      <Stack.Screen name="AddUpdateAddress" component={AddUpdateAddress} />
     </Stack.Navigator>
   );
 };

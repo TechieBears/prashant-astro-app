@@ -24,7 +24,7 @@ export default function Profile({navigation}) {
   const menuItems = [
     { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
     { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F', redirect: 'MyOrders' },
-    { icon: Location06Icon, label: 'My Address', color: '#00786F', redirect: 'MyAddress' },
+    { icon: Location06Icon, label: 'My Address', color: '#00786F', redirect: 'Address' },
     { icon: PolicyIcon, label: 'Privacy Policy', color: '#62748E', redirect: 'PrivacyPolicy' },
     { icon: HeadsetIcon, label: 'Customer Support', color: '#246DF2', redirect: 'CustomerSupport' },
     { icon: InformationDiamondIcon, label: 'About Us', color: '#00B8DB', redirect: 'AboutUs' },
