@@ -15,7 +15,6 @@ import AddUpdateAddress from '../screens/Profile/Address/AddUpdateAddress';
 import About from '../screens/Profile/About';
 import CustomerSupport from '../screens/Profile/CustomerSupport';
 
-
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 const { height } = Dimensions.get('window');
@@ -101,63 +100,88 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   return (
     <>
       <View className="absolute bottom-0 left-0 right-0 bg-transparent">
-        <View className="flex-row bg-white h-20 border-t border-gray-300 items-center justify-around pt-2 pb-3">
-          {state.routes.map((route, index) => {
-            const { options } = descriptors[route.key];
-            const isFocused = state.index === index;
+        {/* Main tab bar container with proper border */}
+        <View className="flex-row bg-white h-20 border-t border-gray-300 items-center justify-between px-4 pt-2 pb-3 relative">
+          
+          {/* Home Tab */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            className="items-center justify-center flex-1"
+            activeOpacity={0.7}
+          >
+            <View className="w-7 h-7 items-center justify-center">
+              <Home07Icon 
+                color={state.index === 0 ? '#FF8835' : '#6B7280'} 
+                size={24}
+              />
+            </View>
+            {state.index === 0 && (
+              <Text className="text-xs text-orange-500 mt-1 font-medium">Home</Text>
+            )}
+          </TouchableOpacity>
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+          {/* Service Tab */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Service')}
+            className="items-center justify-center flex-1"
+            activeOpacity={0.7}
+          >
+            <View className="w-7 h-7 items-center justify-center">
+              <HandPrayerIcon 
+                color={state.index === 1 ? '#FF8835' : '#6B7280'} 
+                size={24}
+              />
+            </View>
+            {state.index === 1 && (
+              <Text className="text-xs text-orange-500 mt-1 font-medium">Service</Text>
+            )}
+          </TouchableOpacity>
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
+          {/* Cart Button - Elevated with proper border */}
+          <TouchableOpacity
+            onPress={() => setCartVisible(true)}
+            className="items-center justify-center"
+            activeOpacity={0.8}
+          >
+            <View className="w-16 h-16 rounded-full bg-white justify-center items-center border-4 border-gray-200 shadow-lg">
+              <ShoppingCart02Icon color={'#6B7280'} size={26} />
+            </View>
+          </TouchableOpacity>
 
-            return (
-              <TouchableOpacity
-                key={index}
-                onPress={onPress}
-                className="flex-1 items-center "
-              >
-                <View className="w-7 h-7 items-center ">
-                  <View className="flex-row  ">
-                    <View>
-                      <Text className="text-lg opacity-60">
-                        {route.name === 'Home' && <Home07Icon color={isFocused ? '#FF8835' : 'gray'} />}
-                        {route.name === 'Service' && <HandPrayerIcon color={isFocused ? '#FF8835' : 'gray'} />}
-                      </Text>
+          {/* Product Tab */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Product')}
+            className="items-center justify-center flex-1"
+            activeOpacity={0.7}
+          >
+            <View className="w-7 h-7 items-center justify-center">
+              <ShoppingBag02Icon 
+                color={state.index === 2 ? '#FF8835' : '#6B7280'} 
+                size={24}
+              />
+            </View>
+            {state.index === 2 && (
+              <Text className="text-xs text-orange-500 mt-1 font-medium">Product</Text>
+            )}
+          </TouchableOpacity>
 
-                    </View>
-                    <View >
-                      <Text className="text-lg opacity-60">
-                        {route.name === 'Product' && <ShoppingBag02Icon color={isFocused ? '#FF8835' : 'gray'} />}
-                        {route.name === 'Profile' && <UserIcon color={isFocused ? '#FF8835' : 'gray'} />}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                {isFocused && (
-                  <Text className="text-sm text-orange-500 mt-1 font-medium">{route.name}</Text>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+          {/* Profile Tab */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile')}
+            className="items-center justify-center flex-1"
+            activeOpacity={0.7}
+          >
+            <View className="w-7 h-7 items-center justify-center">
+              <UserIcon 
+                color={state.index === 3 ? '#FF8835' : '#6B7280'} 
+                size={24}
+              />
+            </View>
+            {state.index === 3 && (
+              <Text className="text-xs text-orange-500 mt-1 font-medium">Profile</Text>
+            )}
+          </TouchableOpacity>
         </View>
-
-        {/* Elevated Cart Button */}
-        <TouchableOpacity
-          onPress={() => setCartVisible(true)}
-          className="absolute top-[-30px]  left-1/2 transform -translate-x-1/2 items-center justify-center"
-        >
-          <View style={{ borderRadius: 100 }} className="w-16 h-16 rounded-full bg-background justify-center items-center border-6 border-t border-gray-300">
-            <ShoppingCart02Icon color={'gray'} />
-          </View>
-        </TouchableOpacity>
       </View>
 
       {/* Cart Bottom Sheet Modal */}

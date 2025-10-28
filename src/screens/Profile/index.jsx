@@ -18,9 +18,11 @@ import {
   InformationDiamondIcon,
   ArrowRight01Icon,
   Mail01Icon,
+  Delete02Icon,
+  Logout05Icon,
 } from 'hugeicons-react-native';
 
-export default function Profile({navigation}) {
+export default function Profile({ navigation }) {
   const menuItems = [
     { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
     { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F', redirect: 'MyOrders' },
@@ -51,9 +53,9 @@ export default function Profile({navigation}) {
         {/* Profile Section */}
         <View className="px-6 mt-2">
           <View className="flex-row items-center space-x-4 border-b border-[#E2E8F0] pb-6">
-            <View className="w-14 h-14 rounded-full overflow-hidden">
+            <View className="w-16 h-16 rounded-full overflow-hidden">
               <Image
-                source={{ uri: 'https://via.placeholder.com/56' }}
+                source={{ uri: 'https://picsum.photos/400/400?random=1' }}
                 className="w-full h-full"
                 resizeMode="contain"
               />
@@ -92,6 +94,14 @@ export default function Profile({navigation}) {
               </TouchableOpacity>
             );
           })}
+        </View>
+        <View className='flex px-6 mt-6 space-y-4 mb-10 justify-end h-[30%] gap-4'>
+          <TouchableOpacity className='border p-2 py-3 border-slate-800 rounded-xl flex flex-row justify-center items-center gap-2'>
+          <Text className='text-center text-slate-800 text-md'>Logout</Text> <Logout05Icon size={18} color="#1D293D" /> 
+          </TouchableOpacity>
+          <TouchableOpacity className='p-2 py-3 bg-red-600 rounded-xl flex flex-row justify-center items-center gap-2'>
+             <Text className='text-center text-white text-md'>Delete Account</Text> <Delete02Icon size={18} color="#fff" /> 
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
