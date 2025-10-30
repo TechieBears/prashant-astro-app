@@ -2,16 +2,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ImageBackground } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
-const ServiceCard = ({ 
-  image, 
-  title, 
-  description, 
-  // onPress,
-  containerStyle = '' 
+const ServiceCard = ({
+  image,
+  title,
+  description,
+  onPress,
+  containerStyle = '',
 }) => {
   return (
     <TouchableOpacity
-      // onPress={onPress}
+      onPress={onPress}
+      disabled={!onPress}
       className={`rounded-2xl overflow-hidden ${containerStyle}`}
       activeOpacity={0.9}
     >

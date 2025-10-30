@@ -23,6 +23,13 @@ const categories = [
   {id: 'kundli', label: 'Kundli Dosh'},
 ];
 
+const baseServiceDetails = {
+  sessionDuration: '30-60 minutes',
+  mode: 'In-person / Online',
+  narrative:
+    'Your hands are more than just tools - they are maps of your life. Our sessions dive deep to reveal insights about your past, present, and future with compassionate guidance.',
+};
+
 const services = [
   {
     id: 'astro-1',
@@ -30,6 +37,7 @@ const services = [
     description: 'Your hands hold the story of your life.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Astrology.png' },
     category: 'astrology',
+    ...baseServiceDetails,
   },
   {
     id: 'astro-2',
@@ -37,6 +45,7 @@ const services = [
     description: 'Your hands hold the story of your life.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Palmistry.png' },
     category: 'astrology',
+    ...baseServiceDetails,
   },
   {
     id: 'astro-3',
@@ -44,6 +53,7 @@ const services = [
     description: 'The cards have a message to share for you.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
     category: 'astrology',
+    ...baseServiceDetails,
   },
   {
     id: 'astro-4',
@@ -51,6 +61,7 @@ const services = [
     description: 'Your hands hold the story of your life.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
     category: 'astrology',
+    ...baseServiceDetails,
   },
   {
     id: 'vastu-1',
@@ -58,6 +69,7 @@ const services = [
     description: 'Balance your space with sacred rituals.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Astrology.png' },
     category: 'vastu',
+    ...baseServiceDetails,
   },
   {
     id: 'pooja-1',
@@ -65,6 +77,7 @@ const services = [
     description: 'The cards have a message to share for you.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Palmistry.png' },
     category: 'pooja',
+    ...baseServiceDetails,
   },
   {
     id: 'kundli-1',
@@ -72,10 +85,11 @@ const services = [
     description: 'Discover harmony through kundli insights.',
     image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
     category: 'kundli',
+    ...baseServiceDetails,
   },
 ];
 
-const ServiceScreen = () => {
+const ServiceScreen = ({navigation}) => {
   const [activeCategory, setActiveCategory] = useState(categories[0].id);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -202,6 +216,9 @@ const ServiceScreen = () => {
                         image={service.image}
                         title={service.title}
                         description={service.description}
+                        onPress={() =>
+                          navigation.navigate('ServiceDetails', {service})
+                        }
                       />
                     </View>
                   ))
