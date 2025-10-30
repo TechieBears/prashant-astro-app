@@ -7,15 +7,15 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   SessionDurationIcon,
   SessionModeIcon,
-  AvailabilityCalendarIcon,
   ServiceBackIcon,
 } from '../../utils/svgIcons';
+import GradientButton from '../../components/Buttons/GradientButton';
+import LinearGradient from 'react-native-linear-gradient';
 
 const defaultService = {
   title: 'Astrology',
@@ -209,21 +209,9 @@ const ServiceDetails = () => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity className="px-5 pb-6" style={{borderRadius: 10}} activeOpacity={0.9}>
-        <LinearGradient
-          colors={['#FFBF12', '#FF8835', '#FF5858']}
-          start={{x: 0.5, y: 0}}
-          end={{x: 0.5, y: 1}}
-          style={{borderRadius: 10}}
-          >
-            <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16}}>
-              <Text className="text-white text-base font-poppinsSemiBold mr-2">
-                Check Availability
-              </Text>
-              <AvailabilityCalendarIcon />
-            </View>
-        </LinearGradient>
-      </TouchableOpacity>
+      <View className="px-5 pb-6">
+        <GradientButton title="Check Availability" showIcon={true} />
+      </View>
     </View>
   );
 };
