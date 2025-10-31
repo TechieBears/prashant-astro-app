@@ -1042,18 +1042,35 @@ const CheckAvailability = () => {
       const astrologerDetail = astrologerOptions.find(
         option => option.value === data.pandit,
       );
+      const modeDetail = serviceModes.find(
+        option => option.value === data.serviceMode,
+      );
+      const timeSlotDetail = timeSlots.find(
+        slot => slot.time === data.timeSlot,
+      );
+
       const payload = {
         ...data,
         service,
         serviceTypeDetail: serviceTypeDetail?.meta ?? serviceTypeDetail,
         astrologerDetail: astrologerDetail?.meta ?? astrologerDetail,
+        modeDetail,
+        timeSlotDetail,
       };
+
       console.log('Booking form submission', payload);
       if (navigation?.navigate) {
-        navigation.navigate('BookingSuccess', {bookingDetails: payload});
+        navigation.navigate('BookingSummary', {bookingDetails: payload});
       }
     },
-    [navigation, service, serviceTypeOptions, astrologerOptions],
+    [
+      navigation,
+      service,
+      serviceTypeOptions,
+      astrologerOptions,
+      serviceModes,
+      timeSlots,
+    ],
   );
 
   return (
@@ -1068,7 +1085,7 @@ const CheckAvailability = () => {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             activeOpacity={0.85}
-            className="w-12 h-12 rounded-2xl border items-center justify-center mr-3"
+            className="w-12 h-12 rounded-[10px] border items-center justify-center mr-3"
             style={{backgroundColor: '#FFFFFF', borderColor: '#00000026'}}>
             <ArrowLeft02Icon size={20} color="#1D293D" />
           </TouchableOpacity>
