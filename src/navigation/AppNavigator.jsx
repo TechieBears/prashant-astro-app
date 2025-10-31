@@ -8,6 +8,7 @@ import { Home07Icon, HandPrayerIcon, ShoppingCart02Icon, ShoppingBag02Icon, User
 import Home from '../screens/Home/index';
 import Service from '../screens/Service/index';
 import ServiceDetails from '../screens/Service/ServiceDetails';
+import CheckAvailability from '../screens/Service/CheckAvailability';
 import Product from '../screens/Product/index';
 import Profile from '../screens/Profile';
 import EditProfile from '../screens/Profile/EditProfile';
@@ -216,6 +217,7 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="ServiceDetails" component={ServiceDetails} />
+      <Stack.Screen name="CheckAvailability" component={CheckAvailability} />
       <Stack.Screen name="EditProfile" component={EditProfile} />
       <Stack.Screen name="Address" component={Address} />
       <Stack.Screen name="AddUpdateAddress" component={AddUpdateAddress} />

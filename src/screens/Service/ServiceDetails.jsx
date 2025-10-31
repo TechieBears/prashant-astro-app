@@ -56,7 +56,7 @@ const discoverySections = [
   {
     title: 'Life Path & Purpose',
     points: [
-      'What is your soul\'s true calling?',
+      "What is your soul's true calling?",
       'Are you on the right path, or is a shift needed?',
     ],
   },
@@ -85,6 +85,16 @@ const ServiceDetails = () => {
     route.params?.service?.sessionDuration ?? '30-60 minutes';
   const mode = route.params?.service?.mode ?? 'In-person / Online';
 
+  const handleCheckAvailability = () => {
+    navigation.navigate('CheckAvailability', {
+      service,
+      timeSlots: route.params?.timeSlots,
+      serviceTypes: route.params?.serviceTypes,
+      serviceModes: route.params?.serviceModes,
+      pandits: route.params?.pandits,
+    });
+  };
+
   return (
     <View className="flex-1 bg-[#FEF8EF]">
       <StatusBar
@@ -95,7 +105,7 @@ const ServiceDetails = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{paddingBottom: bottom}}>
-        <View className="">
+        <View>
           <ImageBackground
             source={service.image}
             resizeMode="cover"
@@ -210,7 +220,11 @@ const ServiceDetails = () => {
       </ScrollView>
 
       <View className="px-5 pb-6">
-        <GradientButton title="Check Availability" showIcon={true} />
+        <GradientButton
+          title="Check Availability"
+          showIcon={true}
+          onPress={handleCheckAvailability}
+        />
       </View>
     </View>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { SvgXml } from 'react-native-svg';
 
 export const MicOutlineIcon = ({ size = 24, stroke = '#1D293D', ...props }) => (
@@ -131,6 +131,86 @@ export const AvailabilityCalendarIcon = ({
   </Svg>
 );
 
+export const CalendarPillIcon = ({
+  size = 16,
+  stroke = '#1D293D',
+  strokeWidth = 1.5,
+  ...props
+}) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none" {...props}>
+    <Path
+      d="M5.33337 1.3335V3.3335"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+    />
+    <Path
+      d="M10.6666 1.3335V3.3335"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+    />
+    <Path
+      d="M2.33337 6.06006H13.6667"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+    />
+    <Path
+      d="M14 5.66683V11.3335C14 13.3335 13 14.6668 10.6667 14.6668H5.33333C3 14.6668 2 13.3335 2 11.3335V5.66683C2 3.66683 3 2.3335 5.33333 2.3335H10.6667C13 2.3335 14 3.66683 14 5.66683Z"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+    />
+    <Path
+      d="M10.4631 9.13314H10.4691"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+    <Path
+      d="M10.4631 11.1331H10.4691"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+    <Path
+      d="M7.99703 9.13314H8.00302"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+    <Path
+      d="M7.99703 11.1331H8.00302"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+    <Path
+      d="M5.5295 9.13314H5.53549"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+    <Path
+      d="M5.5295 11.1331H5.53549"
+      stroke={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={strokeWidth}
+    />
+  </Svg>
+);
+
 const serviceBackIconXml = `
 <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="52" height="52" rx="10" fill="black" fill-opacity="0.15"/>
@@ -140,6 +220,20 @@ const serviceBackIconXml = `
 
 export const ServiceBackIcon = ({ size = 52, ...props }) => (
   <SvgXml xml={serviceBackIconXml} width={size} height={size} {...props} />
+);
+
+export const NavArrowLeftIcon = ({ size = 36, stroke = '#1D293D', ...props }) => (
+  <Svg width={size} height={size} viewBox="0 0 36 36" fill="none" {...props}>
+    <Rect width={36} height={36} rx={10} fill="#FFFFFF" />
+    <Path d="M21 12C21 12 15 16.4189 15 18C15 19.5812 21 24 21 24" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+export const NavArrowRightIcon = ({ size = 36, stroke = '#1D293D', ...props }) => (
+  <Svg width={size} height={size} viewBox="0 0 36 36" fill="none" {...props}>
+    <Rect width={36} height={36} rx={10} fill="#FFFFFF" />
+    <Path d="M15 12C15 12 21 16.4189 21 18C21 19.5812 15 24 15 24" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
 );
 
 export const BookingSuccessBadgeIcon = ({
