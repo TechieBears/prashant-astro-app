@@ -71,3 +71,24 @@ export const changePassword = async (passwordData) => {
     throw error;
   }
 };
+
+// Service APIs
+export const getServiceCategories = async () => {
+  try {
+    const response = await apiClient.get('/service-categories/public/our-service-categories');
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const getServices = async () => {
+  try {
+    const response = await apiClient.get('/service/astroguid/public/get-all');
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};

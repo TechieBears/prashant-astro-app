@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -15,96 +15,61 @@ import {MicOutlineIcon} from '../../utils/svgIcons';
 import ServiceCard from '../../components/Cards/Service';
 import {CATEGORY_ACTIVE_GRADIENT, HEADER_GRADIENT} from '../../utils/gradients';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { getServiceCategories, getServices } from '../../services';
 
-const categories = [
-  {id: 'astrology', label: 'Astrology'},
-  {id: 'vastu', label: 'Vastu Remedy'},
-  {id: 'pooja', label: 'Pooja Vidhi'},
-  {id: 'kundli', label: 'Kundli Dosh'},
-];
-
-const baseServiceDetails = {
-  sessionDuration: '30-60 minutes',
-  mode: 'In-person / Online',
-  narrative:
-    'Your hands are more than just tools - they are maps of your life. Our sessions dive deep to reveal insights about your past, present, and future with compassionate guidance.',
-};
-
-const services = [
-  {
-    id: 'astro-1',
-    title: 'Astrology',
-    description: 'Your hands hold the story of your life.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Astrology.png' },
-    category: 'astrology',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'astro-2',
-    title: 'Crystal Therapy',
-    description: 'Your hands hold the story of your life.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Palmistry.png' },
-    category: 'astrology',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'astro-3',
-    title: 'Pitru Dosh',
-    description: 'The cards have a message to share for you.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
-    category: 'astrology',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'astro-4',
-    title: 'Vastushanti',
-    description: 'Your hands hold the story of your life.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
-    category: 'astrology',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'vastu-1',
-    title: 'Vastu Consultation',
-    description: 'Balance your space with sacred rituals.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Astrology.png' },
-    category: 'vastu',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'pooja-1',
-    title: 'Pooja Vidhi',
-    description: 'The cards have a message to share for you.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Palmistry.png' },
-    category: 'pooja',
-    ...baseServiceDetails,
-  },
-  {
-    id: 'kundli-1',
-    title: 'Kundli Matching',
-    description: 'Discover harmony through kundli insights.',
-    image: { uri: 'https://i.postimg.cc/CxhQnSxt/Tarot.png' },
-    category: 'kundli',
-    ...baseServiceDetails,
-  },
-];
+const DEFAULT_SERVICE_IMAGE = 'https://i.postimg.cc/CxhQnSxt/Astrology.png';
 
 const ServiceScreen = ({navigation}) => {
-  const [activeCategory, setActiveCategory] = useState(categories[0].id);
+  const {top} = useSafeAreaInsets();
+  const [allCategories, setAllCategories] = useState([]);
+  const [services, setServices] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredServices = useMemo(() => {
-    return services.filter((service) => {
-      const matchesCategory = service.category === activeCategory;
-      const matchesSearch = service.title
-        .toLowerCase()
-        .includes(searchTerm.trim().toLowerCase());
+    const activeCategoryData = services.find(
+      category => category?._id === activeCategory,
+    );
 
-      return matchesCategory && matchesSearch;
+    if (!activeCategoryData) {
+      return [];
+    }
+
+    const search = searchTerm.trim().toLowerCase();
+
+    return (activeCategoryData.services || []).filter(service => {
+      const title = (service?.title || service?.name || '').toLowerCase();
+      return title.includes(search);
     });
-  }, [activeCategory, searchTerm]);
+  }, [activeCategory, searchTerm, services]);
 
-  const {top} = useSafeAreaInsets();
+  useEffect(() => {
+    getServiceCategories()
+      .then(data => {
+        const fetchedCategories = data?.data || [];
+        setAllCategories(fetchedCategories);
+        if (
+          fetchedCategories.length &&
+          !fetchedCategories.some(category => category._id === activeCategory)
+        ) {
+          setActiveCategory(fetchedCategories[0]._id);
+        }
+      })
+      .catch(error => {
+        console.log('Error fetching service categories:', error);
+      });
+    getServices()
+      .then(data => {
+        const fetchedServices = data?.data || [];
+        setServices(fetchedServices);
+        if (!activeCategory && fetchedServices.length) {
+          setActiveCategory(fetchedServices[0]._id);
+        }
+      })
+      .catch(error => {
+        console.log('Error fetching services:', error);
+      });
+  },[]);
 
   return (
     <View className="flex-1">
@@ -156,16 +121,16 @@ const ServiceScreen = ({navigation}) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{paddingHorizontal: 12}}
               className="py-4">
-              {categories.map((category, index) => {
-                const isActive = category.id === activeCategory;
-                const marginRight = index === categories.length - 1 ? 0 : 12;
+              {allCategories.map((category, index) => {
+                const isActive = category._id === activeCategory;
+                const marginRight = index === allCategories.length - 1 ? 0 : 12;
 
                 if (isActive) {
                   return (
                     <TouchableOpacity
-                      key={category.id}
+                      key={category._id}
                       activeOpacity={0.85}
-                      onPress={() => setActiveCategory(category.id)}
+                      onPress={() => setActiveCategory(category._id)}
                       style={{marginRight}}
                       className="rounded-[10px]">
                       <LinearGradient
@@ -175,7 +140,7 @@ const ServiceScreen = ({navigation}) => {
                         style={{borderRadius: 10}}>
                         <View className="px-6 py-2.5">
                           <Text className="text-white text-sm font-poppinsSemiBold">
-                            {category.label}
+                            {category.name}
                           </Text>
                         </View>
                       </LinearGradient>
@@ -185,13 +150,13 @@ const ServiceScreen = ({navigation}) => {
 
                 return (
                   <TouchableOpacity
-                    key={category.id}
+                    key={category._id}
                     activeOpacity={0.85}
-                    onPress={() => setActiveCategory(category.id)}
+                    onPress={() => setActiveCategory(category._id)}
                     style={{marginRight}}
                     className="px-6 py-2.5 rounded-[10px] bg-white border border-[#D5DBE8]">
                     <Text className="text-[#62748E] text-sm font-poppins">
-                      {category.label}
+                      {category.name}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -210,18 +175,27 @@ const ServiceScreen = ({navigation}) => {
 
               <View className="flex-row flex-wrap gap-y-5 gap-x-4">
                 {filteredServices.length ? (
-                  filteredServices.map(service => (
-                    <View key={service.id} className="w-[48%]">
-                      <ServiceCard
-                        image={service.image}
-                        title={service.title}
-                        description={service.description}
-                        onPress={() =>
-                          navigation.navigate('ServiceDetails', {service})
-                        }
-                      />
-                    </View>
-                  ))
+                  filteredServices.map(service => {
+                    const imageSource = service?.image
+                      ? {uri: service.image}
+                      : {uri: DEFAULT_SERVICE_IMAGE};
+                    const serviceTitle = service?.title || service?.name;
+                    const serviceDescription =
+                      service?.subTitle || service?.description;
+
+                    return (
+                      <View key={service._id} className="w-[48%]">
+                        <ServiceCard
+                          image={imageSource}
+                          title={serviceTitle}
+                          description={serviceDescription}
+                          onPress={() =>
+                            navigation.navigate('ServiceDetails', {service})
+                          }
+                        />
+                      </View>
+                    );
+                  })
                 ) : (
                   <View className="w-full py-10 items-center">
                     <Text className="text-base text-text2 font-poppins">
