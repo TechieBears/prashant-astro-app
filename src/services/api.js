@@ -92,3 +92,14 @@ export const getServices = async () => {
     throw error;
   }
 };
+
+export const getSingleServicesDetails = async (id) => {
+  try {
+    if (!id) throw new Error('Service ID is required');
+    const response = await apiClient.get(`/service/public/get-single?id=${id}`);
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};

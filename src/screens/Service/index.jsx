@@ -190,7 +190,10 @@ const ServiceScreen = ({navigation}) => {
                           title={serviceTitle}
                           description={serviceDescription}
                           onPress={() =>
-                            navigation.navigate('ServiceDetails', {service})
+                            navigation.navigate('ServiceDetails', {
+                              serviceId: service._id,
+                              service,
+                            })
                           }
                         />
                       </View>
