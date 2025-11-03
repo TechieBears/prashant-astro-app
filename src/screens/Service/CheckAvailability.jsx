@@ -640,7 +640,7 @@ const FormModeDropdown = ({
     name={name}
     rules={rules}
     render={({field: {value, onChange}, fieldState: {error}}) => (
-      <View style={styles.dropdownWrapper}>
+      <View className="mb-5">
         {label ? (
           <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
             {label}
@@ -658,8 +658,10 @@ const FormModeDropdown = ({
           placeholderStyle={styles.placeholderText}
           itemTextStyle={styles.itemText}
           renderItem={item => (
-            <View style={styles.dropdownItem}>
-              <Text style={styles.itemText}>{item.label}</Text>
+            <View className="px-4 py-[10px] border-b border-[#F2F4F7]">
+              <Text className="font-poppins text-base text-[#1D293D]">
+                {item.label}
+              </Text>
             </View>
           )}
           containerStyle={styles.dropdownContainer}
@@ -688,7 +690,7 @@ const FormServiceTypeDropdown = ({
     name={name}
     rules={rules}
     render={({field: {value, onChange}, fieldState: {error}}) => (
-      <View style={styles.dropdownWrapper}>
+      <View className="mb-5">
         {label ? (
           <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
             {label}
@@ -706,8 +708,10 @@ const FormServiceTypeDropdown = ({
           placeholderStyle={styles.placeholderText}
           itemTextStyle={styles.itemText}
           renderItem={item => (
-            <View style={styles.dropdownItem}>
-              <Text style={styles.itemText}>{item.label}</Text>
+            <View className="px-4 py-[10px] border-b border-[#F2F4F7]">
+              <Text className="font-poppins text-base text-[#1D293D]">
+                {item.label}
+              </Text>
             </View>
           )}
           containerStyle={styles.dropdownContainer}
@@ -736,7 +740,7 @@ const FormAstrologerDropdown = ({
     name={name}
     rules={rules}
     render={({field: {value, onChange}, fieldState: {error}}) => (
-      <View style={styles.dropdownWrapper}>
+      <View className="mb-5">
         {label ? (
           <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
             {label}
@@ -754,8 +758,10 @@ const FormAstrologerDropdown = ({
           placeholderStyle={styles.placeholderText}
           itemTextStyle={styles.itemText}
           renderItem={item => (
-            <View style={styles.dropdownItem}>
-              <Text style={styles.itemText}>{item.label}</Text>
+            <View className="px-4 py-[10px] border-b border-[#F2F4F7]">
+              <Text className="font-poppins text-base text-[#1D293D]">
+                {item.label}
+              </Text>
             </View>
           )}
           containerStyle={styles.dropdownContainer}
@@ -802,23 +808,19 @@ const TimeSlotDropdown = ({value, onChange, options = [], error}) => {
         containerStyle={styles.timeDropdownContainer}
         renderItem={item => (
           <View
-            style={[
-              styles.timeDropdownItem,
-              item.disabled && styles.timeDropdownItemDisabled,
-            ]}>
+            className={`flex-row items-center justify-between px-[18px] py-4 border-b border-[#F1F5F9]${
+              item.disabled ? ' bg-[#F9FAFB]' : ''
+            }`}>
             <Text
-              style={[
-                styles.timeDropdownLabel,
-                item.disabled && styles.timeDropdownLabelDisabled,
-              ]}>
+              className={`font-poppinsSemiBold text-[15px] text-[#1D293D]${
+                item.disabled ? ' text-[#CBD5E1]' : ''
+              }`}>
               {item.label}
             </Text>
             <Text
-              style={[
-                styles.timeDropdownStatus,
-                item.status !== 'Available' &&
-                  styles.timeDropdownStatusDisabled,
-              ]}>
+              className={`font-poppinsMedium text-[13px] text-[#1D293D]${
+                item.status !== 'Available' ? ' text-[#CBD5E1]' : ''
+              }`}>
               {item.status}
             </Text>
           </View>
@@ -1074,19 +1076,18 @@ const CheckAvailability = () => {
   );
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#FEF8EF'}}>
+    <SafeAreaView className="flex-1 bg-[#FEF8EF]">
       <StatusBar
         translucent
         backgroundColor="transparent"
         barStyle="dark-content"
       />
-      <View style={{flex: 1}}>
+      <View className="flex-1">
         <View className="flex-row items-center mt-3 mb-8 px-5">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             activeOpacity={0.85}
-            className="w-12 h-12 rounded-[10px] border items-center justify-center mr-3"
-            style={{backgroundColor: '#FFFFFF', borderColor: '#00000026'}}>
+            className="w-12 h-12 rounded-[10px] border border-[#00000026] bg-white items-center justify-center mr-3">
             <ArrowLeft02Icon size={20} color="#1D293D" />
           </TouchableOpacity>
           <Text className="text-[#1D293D] font-poppinsMedium text-[18px]">
@@ -1125,26 +1126,27 @@ const CheckAvailability = () => {
               rules={{required: 'Please choose an astrologer'}}
             />
 
-            <View style={styles.dateHeaderStandalone}>
-              <View style={styles.monthPill}>
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center bg-white px-4 py-[10px] rounded-[10px] border border-[#E2E8F0]">
                 <CalendarPillIcon />
-                <Text style={styles.monthText}>{monthLabel}</Text>
+                <Text className="ml-[10px] font-poppinsSemiBold text-base text-[#1D293D]">
+                  {monthLabel}
+                </Text>
               </View>
-              <View style={styles.navGroup}>
+              <View className="flex-row items-center">
                 <TouchableOpacity
                   onPress={handlePrev}
                   activeOpacity={0.85}
-                  style={[
-                    styles.navButton,
-                    dayOffset === 0 && styles.navDisabled,
-                  ]}
+                  className={`w-10 h-10 rounded-[12px] bg-white border border-[#E2E8F0] justify-center items-center ml-3${
+                    dayOffset === 0 ? ' opacity-40' : ''
+                  }`}
                   disabled={dayOffset === 0}>
                   <NavArrowLeftIcon size={36} stroke="#1D293D" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleNext}
                   activeOpacity={0.85}
-                  style={styles.navButton}>
+                  className="w-10 h-10 rounded-[12px] bg-white border border-[#E2E8F0] justify-center items-center ml-3">
                   <NavArrowRightIcon size={36} stroke="#1D293D" />
                 </TouchableOpacity>
               </View>
@@ -1153,23 +1155,21 @@ const CheckAvailability = () => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.dateScrollContent}>
+              contentContainerStyle={{paddingHorizontal: 6}}>
               {displayedDays.map(day => {
                 const isSelected = day.key === selectedDate;
                 const content = (
-                  <View style={styles.dateContent}>
+                  <View className="items-center">
                     <Text
-                      style={[
-                        styles.dateLabelText,
-                        isSelected && styles.dateLabelTextSelected,
-                      ]}>
+                      className={`font-poppinsSemiBold text-xs text-[#1D293D]${
+                        isSelected ? ' text-white' : ''
+                      }`}>
                       {day.label}
                     </Text>
                     <Text
-                      style={[
-                        styles.dateNumberText,
-                        isSelected && styles.dateNumberTextSelected,
-                      ]}>
+                      className={`mt-1 font-poppinsSemiBold text-[18px] text-[#1D293D]${
+                        isSelected ? ' text-white' : ''
+                      }`}>
                       {day.dateNumber}
                     </Text>
                   </View>
@@ -1181,13 +1181,13 @@ const CheckAvailability = () => {
                       key={day.key}
                       onPress={() => handleDayPress(day.key)}
                       activeOpacity={0.9}
-                      style={styles.dateChipWrapper}>
+                      className="mr-2">
                       <LinearGradient
                         colors={['#FFBF12', '#FF8835', '#FF5858']}
                         locations={[0, 0.5, 1]}
                         start={{x: 0.5, y: 0}}
                         end={{x: 0.5, y: 1}}
-                        style={[styles.dateChipBase, styles.dateChipSelected]}>
+                        className="w-[60px] h-[76px] rounded-[18px] items-center justify-center">
                         {content}
                       </LinearGradient>
                     </TouchableOpacity>
@@ -1199,8 +1199,9 @@ const CheckAvailability = () => {
                     key={day.key}
                     onPress={() => handleDayPress(day.key)}
                     activeOpacity={0.85}
-                    style={styles.dateChipWrapper}>
-                    <View style={[styles.dateChipBase, styles.dateChip]}>
+                    className="mr-2">
+                    <View
+                      className="w-[60px] h-[76px] rounded-[18px] items-center justify-center bg-white border border-[#E2E8F0]">
                       {content}
                     </View>
                   </TouchableOpacity>
@@ -1222,7 +1223,7 @@ const CheckAvailability = () => {
               )}
             />
 
-            <View style={{marginTop: 12}}>
+            <View className="mt-3">
               <FormTextField
                 control={control}
                 name="fullName"
@@ -1270,7 +1271,7 @@ const CheckAvailability = () => {
           className="mx-5 pt-3"
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? bottom + 20 : 0}>
-          <View style={[styles.footerContainer, {paddingBottom: 0}]}>
+          <View className="pb-0">
             <GradientButton
               title="Check Summary"
               showIcon={false}
@@ -1287,9 +1288,6 @@ const CheckAvailability = () => {
 export default CheckAvailability;
 
 const styles = StyleSheet.create({
-  dropdownWrapper: {
-    marginBottom: 20,
-  },
   dropdown: {
     height: 45,
     borderRadius: 10,
@@ -1307,12 +1305,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: {width: 0, height: 4},
     elevation: 4,
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F7',
   },
   selectedText: {
     fontFamily: 'Poppins-Regular',
@@ -1334,175 +1326,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#FFFFFF',
   },
-  timeDropdownItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  timeDropdownItemDisabled: {
-    backgroundColor: '#F9FAFB',
-  },
-  timeDropdownLabel: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 15,
-    color: '#1D293D',
-  },
-  timeDropdownLabelDisabled: {
-    color: '#CBD5E1',
-  },
-  timeDropdownStatus: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 13,
-    color: '#1D293D',
-  },
-  timeDropdownStatusDisabled: {
-    color: '#CBD5E1',
-  },
   timeItemText: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 15,
     color: '#1D293D',
-  },
-  dateHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  monthPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  monthText: {
-    marginLeft: 10,
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: '#1D293D',
-  },
-  navGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  navDisabled: {
-    opacity: 0.4,
-  },
-  navButtonText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#1D293D',
-  },
-  dateHeaderStandalone: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  dateScrollContent: {
-    paddingHorizontal: 6,
-  },
-  dateChipWrapper: {
-    marginRight: 8,
-  },
-  dateChipBase: {
-    borderRadius: 18,
-    width: 60,
-    height: 76,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateChip: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  dateChipSelected: {},
-  dateContent: {
-    alignItems: 'center',
-  },
-  dateLabelText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 12,
-    color: '#1D293D',
-  },
-  dateLabelTextSelected: {
-    color: '#FFFFFF',
-  },
-  dateNumberText: {
-    marginTop: 4,
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#1D293D',
-  },
-  dateNumberTextSelected: {
-    color: '#FFFFFF',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  timeChipWrapper: {
-    marginRight: 12,
-    marginBottom: 12,
-  },
-  timeChip: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    minWidth: 140,
-    alignItems: 'center',
-  },
-  timeChipDisabled: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#E5E7EB',
-  },
-  timeChipSelected: {
-    borderRadius: 10,
-    // paddingHorizontal: 18,
-    // paddingVertical: 12,
-    minWidth: 140,
-    alignItems: 'center',
-  },
-  timeText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 14,
-    color: '#1D293D',
-  },
-  timeTextDisabled: {
-    color: '#A0AEC0',
-  },
-  timeTextSelected: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  timeSubTextDisabled: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 11,
-    color: '#A0AEC0',
-    marginTop: 4,
-  },
+  }
 });
