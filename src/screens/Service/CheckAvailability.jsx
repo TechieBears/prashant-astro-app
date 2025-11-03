@@ -1187,7 +1187,7 @@ const CheckAvailability = () => {
                         locations={[0, 0.5, 1]}
                         start={{x: 0.5, y: 0}}
                         end={{x: 0.5, y: 1}}
-                        className="w-[60px] h-[76px] rounded-[18px] items-center justify-center">
+                        style={[styles.dateChipBase]}>
                         {content}
                       </LinearGradient>
                     </TouchableOpacity>
@@ -1330,5 +1330,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontSize: 15,
     color: '#1D293D',
-  }
+  },
+  dateChipBase: {
+    borderRadius: 18,
+    width: 60,
+    height: 76,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
