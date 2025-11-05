@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -23,527 +23,62 @@ import {
   NavArrowRightIcon,
 } from '../../utils/svgIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import {
+  getAvailabilityServicesType,
+  getAvailabilityAstrologers,
+  getAvailabilityTimeSlot,
+  getCustomerAddresses,
+} from '../../services/api';
+import DualToggleSwitch from '../../components/Toggle/DualToggleSwitch';
 
 const DAYS_TO_RENDER = 6;
 
-const defaultService = {
-  title: 'Astrology Consultation',
-  description: 'Book your reading today and take a step closer to clarity.',
+const SERVICE_MODE_OPTIONS = Object.freeze([
+  {label: 'Consult Online', value: 'consult_online'},
+  {label: 'Consult at Astrologer location', value: 'consult_location'},
+  {label: 'Pooja at Home', value: 'pooja_home'},
+]);
+
+const SERVICE_MODE_REQUEST_MAP = {
+  consult_online: 'online',
+  consult_location: 'pandit_center',
+  pooja_home: 'home_pooja',
 };
 
-const STATIC_SERVICE_CATEGORIES = [
-  {
-    _id: '68df88f70a820201dc769eb3',
-    name: 'Astrology',
-    services: [
-      {_id: '68df8b994e18aa3ca4cb02d5', name: 'Daily Horoscope'},
-      {_id: '68ecad82400bffe5fadce940', name: 'Vastu Shastra'},
-    ],
-  },
-  {
-    _id: '68df89310a820201dc769ed7',
-    name: 'Kundali Dosh',
-    services: [
-      {_id: '68e61af0a548fb579773e2fb', name: 'Pitru Dosh'},
-      {_id: '68e660e16ef4b3db068caa9d', name: 'Test Service'},
-    ],
-  },
-  {
-    _id: '68df896c65fbe60f36f26909',
-    name: 'Pooja Vidhi',
-    services: [{_id: '68e3658e1761b31df636c280', name: 'Ganesh Puja'}],
-  },
-  {
-    _id: '68df898a65fbe60f36f26926',
-    name: 'Vastu remedy',
-    services: [],
-  },
-  {
-    _id: '68e76e67643457b48fb56761',
-    name: 'Test',
-    services: [{_id: '68df961b6e54a57f02e112ed', name: 'Kundali test'}],
-  },
-  {
-    _id: '68e76eb2a84191bc3c33d0eb',
-    name: 'Dummy Cate',
-    services: [],
-  },
-  {
-    _id: '68e8d517f50426f0c6d6e76a',
-    name: 'New testing one',
-    services: [],
-  },
-];
+const formatFullName = (firstName, lastName) =>
+  [firstName, lastName].filter(Boolean).join(' ').trim();
 
-const STATIC_DROPDOWN_DATA = [
-  {
-    _id: '68fb745837f16daa02c3edaa',
-    email: 'xevehi7153@ametitas.com',
-    mobileNo: '8789065789',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1761309686/dev_uploads/astrologer1_i3dyao.jpg',
-    profile: {
-      _id: '68fb745837f16daa02c3eda8',
-      employeeType: 'astrologer',
-      firstName: 'astrologerone',
-      lastName: 'test',
-      skills: ['Pitru Dosh', 'Vastu Shastra'],
-      languages: ['maithili', 'kashmiri', 'assamese'],
-      experience: 50,
-    },
-  },
-  {
-    _id: '68fb2e6a5bdd901b256f6627',
-    email: 'myfisy@fxzig.com',
-    mobileNo: '8768768766',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1761291806/dev_uploads/7687b6bf01763fc31f1c612a92670e9b55e5076e_td8zfz.png',
-    profile: {
-      _id: '68fb2e6a5bdd901b256f6625',
-      employeeType: 'astrologer',
-      firstName: 'Astrologer',
-      lastName: 'Prashant',
-      skills: ['Daily Horoscope', 'Ganesh Puja', 'Kundali', 'Pitru Dosh'],
-      languages: ['hindi', 'bengali', 'marathi', 'telugu'],
-      experience: 4,
-    },
-  },
-  {
-    _id: '68e4f7fb6d23ccc0924304e6',
-    email: 'dudekunal_2012@yahoo.in',
-    mobileNo: '8459520112',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1760084017/dev_uploads/Pitru_dosha_ik0yzh.jpg',
-    profile: {
-      _id: '68e4f7fb6d23ccc0924304e4',
-      employeeType: 'astrologer',
-      firstName: 'Pandit',
-      lastName: 'One',
-      skills: [
-        'Daily Horoscope',
-        'Ganesh Puja at Home or Office by Expert Hindu Pujari',
-        'Kundali',
-        'Pitru Dosh',
-      ],
-      languages: ['hindi', 'marathi', 'telugu', 'gujarati', 'english'],
-      experience: 30,
-    },
-  },
-  {
-    _id: '68e4dbcfa33189f9582815a6',
-    email: 'vasanth.basani@techiebears.com',
-    mobileNo: '8459520112',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1759835182/dev_uploads/service_2_qlovrg.png',
-    profile: {
-      _id: '68e4dbcfa33189f9582815a4',
-      employeeType: 'astrologer',
-      firstName: 'wepaloaw',
-      lastName: 'bitnami',
-      skills: ['vastu', 'havan', 'marriage'],
-      languages: ['English', 'Hindi', 'kerla'],
-      experience: 3,
-    },
-  },
-  {
-    _id: '68e3b4b959c9767b95d9d2bd',
-    email: 'xofipoki@denipl.net',
-    mobileNo: '8768768766',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1760356892/dev_uploads/4eb1722930a4d31c8fdf4d3eeb49087141112c8f_rkmojj.png',
-    profile: {
-      _id: '68e3b4b959c9767b95d9d2bb',
-      employeeType: 'astrologer',
-      firstName: 'Pandit',
-      lastName: 'Astrologer',
-      skills: [
-        'Ganesh Puja at Home or Office by Expert Hindu Pujari',
-        'Kundali',
-        'Daily Horoscope',
-      ],
-      languages: ['bengali', 'hindi'],
-      experience: 3,
-    },
-  },
-  {
-    _id: '68e3b0e9c0141a6a9362d2fa',
-    email: 'qipemire@cyclelove.cc',
-    mobileNo: '8768768766',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1759752420/dev_uploads/service_3_tymvxo.png',
-    profile: {
-      _id: '68e3b0e9c0141a6a9362d2f8',
-      employeeType: 'astrologer',
-      firstName: 'Pandit',
-      lastName: 'Kumar',
-      skills: [
-        'Daily Horoscope',
-        'Ganesh Puja at Home or Office by Expert Hindu Pujari',
-        'Kundali',
-      ],
-      languages: ['hindi', 'bengali'],
-      experience: 3,
-    },
-  },
-  {
-    _id: '68e365801761b31df636c277',
-    email: 'naruto123@gmail.com',
-    mobileNo: '9988776654',
-    profileImage:
-      'https://res.cloudinary.com/astroguid/image/upload/v1759732991/dev_uploads/Naruto_hjrmgv.jpg',
-    profile: {
-      _id: '68e365801761b31df636c275',
-      employeeType: 'astrologer',
-      firstName: 'Narutoo',
-      lastName: 'Uzamakii',
-      skills: [
-        'Ganesh Puja at Home or Office by Expert Hindu Pujari',
-        'Kundali',
-      ],
-      languages: ['hindi', 'marathi', 'tamil', 'english', 'urdu'],
-      experience: 9,
-    },
-  },
-  {
-    _id: '68dfa2b12fa8ec20cfc209a6',
-    email: 'rohitmiryala@techiebears.com',
-    mobileNo: '8459520811',
-    profileImage: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-    profile: {
-      _id: '68dfa2b12fa8ec20cfc209a4',
-      employeeType: 'astrologer',
-      firstName: 'wepalo1',
-      lastName: 'bitfami1',
-      skills: ['marriage'],
-      languages: ['English', 'Hindi', 'kerla'],
-      experience: 3,
-    },
-  },
-  {
-    _id: '68df9f7936511501a73a46f5',
-    email: 'prashantpandit@gmail.com',
-    mobileNo: '8768768766',
-    profileImage: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-    profile: {
-      _id: '68df9f7936511501a73a46f3',
-      employeeType: 'astrologer',
-      firstName: 'Prashant',
-      lastName: 'Pandit',
-      skills: ['marriage'],
-      languages: ['English', 'Hindi', 'kerla'],
-      experience: 3,
-    },
-  },
-];
+const formatAddressLine = address => {
+  if (!address) {
+    return '';
+  }
 
-const defaultTimeSlots = [
-  {
-    display_time: '06:00',
-    display_end_time: '06:30',
-    service_end_time: '07:00',
-    time: '06:00 - 07:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '06:30',
-    display_end_time: '07:00',
-    service_end_time: '07:30',
-    time: '06:30 - 07:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '07:00',
-    display_end_time: '07:30',
-    service_end_time: '08:00',
-    time: '07:00 - 08:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '07:30',
-    display_end_time: '08:00',
-    service_end_time: '08:30',
-    time: '07:30 - 08:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '08:00',
-    display_end_time: '08:30',
-    service_end_time: '09:00',
-    time: '08:00 - 09:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '08:30',
-    display_end_time: '09:00',
-    service_end_time: '09:30',
-    time: '08:30 - 09:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '09:00',
-    display_end_time: '09:30',
-    service_end_time: '10:00',
-    time: '09:00 - 10:00',
-    booked: true,
-    status: 'unavailable',
-    disabled: false,
-  },
-  {
-    display_time: '09:30',
-    display_end_time: '10:00',
-    service_end_time: '10:30',
-    time: '09:30 - 10:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '10:00',
-    display_end_time: '10:30',
-    service_end_time: '11:00',
-    time: '10:00 - 11:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '10:30',
-    display_end_time: '11:00',
-    service_end_time: '11:30',
-    time: '10:30 - 11:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '11:00',
-    display_end_time: '11:30',
-    service_end_time: '12:00',
-    time: '11:00 - 12:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '11:30',
-    display_end_time: '12:00',
-    service_end_time: '12:30',
-    time: '11:30 - 12:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '12:00',
-    display_end_time: '12:30',
-    service_end_time: '13:00',
-    time: '12:00 - 13:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '12:30',
-    display_end_time: '13:00',
-    service_end_time: '13:30',
-    time: '12:30 - 13:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '13:00',
-    display_end_time: '13:30',
-    service_end_time: '14:00',
-    time: '13:00 - 14:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '13:30',
-    display_end_time: '14:00',
-    service_end_time: '14:30',
-    time: '13:30 - 14:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '14:00',
-    display_end_time: '14:30',
-    service_end_time: '15:00',
-    time: '14:00 - 15:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '14:30',
-    display_end_time: '15:00',
-    service_end_time: '15:30',
-    time: '14:30 - 15:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '15:00',
-    display_end_time: '15:30',
-    service_end_time: '16:00',
-    time: '15:00 - 16:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '15:30',
-    display_end_time: '16:00',
-    service_end_time: '16:30',
-    time: '15:30 - 16:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '16:00',
-    display_end_time: '16:30',
-    service_end_time: '17:00',
-    time: '16:00 - 17:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '16:30',
-    display_end_time: '17:00',
-    service_end_time: '17:30',
-    time: '16:30 - 17:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '17:00',
-    display_end_time: '17:30',
-    service_end_time: '18:00',
-    time: '17:00 - 18:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '17:30',
-    display_end_time: '18:00',
-    service_end_time: '18:30',
-    time: '17:30 - 18:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '18:00',
-    display_end_time: '18:30',
-    service_end_time: '19:00',
-    time: '18:00 - 19:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '18:30',
-    display_end_time: '19:00',
-    service_end_time: '19:30',
-    time: '18:30 - 19:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '19:00',
-    display_end_time: '19:30',
-    service_end_time: '20:00',
-    time: '19:00 - 20:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '19:30',
-    display_end_time: '20:00',
-    service_end_time: '20:30',
-    time: '19:30 - 20:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '20:00',
-    display_end_time: '20:30',
-    service_end_time: '21:00',
-    time: '20:00 - 21:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '20:30',
-    display_end_time: '21:00',
-    service_end_time: '21:30',
-    time: '20:30 - 21:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '21:00',
-    display_end_time: '21:30',
-    service_end_time: '22:00',
-    time: '21:00 - 22:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '21:30',
-    display_end_time: '22:00',
-    service_end_time: '22:30',
-    time: '21:30 - 22:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '22:00',
-    display_end_time: '22:30',
-    service_end_time: '23:00',
-    time: '22:00 - 23:00',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-  {
-    display_time: '22:30',
-    display_end_time: '23:00',
-    service_end_time: '23:30',
-    time: '22:30 - 23:30',
-    booked: false,
-    status: 'available',
-    disabled: false,
-  },
-];
+  const locationParts = [
+    address?.city,
+    address?.state,
+    address?.country,
+  ]
+    .map(part => (part ? String(part).trim() : ''))
+    .filter(Boolean);
+
+  const baseParts = [
+    address?.address ? String(address.address).trim() : '',
+    locationParts.join(', '),
+  ].filter(Boolean);
+
+  const baseLine = baseParts.join(', ');
+
+  if (!address?.postalCode) {
+    return baseLine;
+  }
+
+  if (!baseLine) {
+    return String(address.postalCode);
+  }
+
+  return `${baseLine} - ${address.postalCode}`;
+};
+
 
 const normalizeOptions = (options, fallback = []) => {
   if (Array.isArray(options) && options.length > 0) {
@@ -565,15 +100,7 @@ const normalizeOptions = (options, fallback = []) => {
 
 const buildServiceTypeOptions = rawOptions => {
   if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
-    return STATIC_SERVICE_CATEGORIES.flatMap(category =>
-      Array.isArray(category.services)
-        ? category.services.map(service => ({
-            label: service.name,
-            value: service._id,
-            meta: service,
-          }))
-        : [],
-    );
+    return [];
   }
 
   const serviceSet = new Map();
@@ -590,16 +117,6 @@ const buildServiceTypeOptions = rawOptions => {
       }
     });
   });
-
-  if (serviceSet.size === 0) {
-    return STATIC_SERVICE_CATEGORIES.flatMap(category =>
-      category.services.map(service => ({
-        label: service.name,
-        value: service._id,
-        meta: service,
-      })),
-    );
-  }
 
   return Array.from(serviceSet.values());
 };
@@ -627,6 +144,47 @@ const buildAstrologerOptions = rawOptions => {
   });
 };
 
+const normalizeTimeSlots = rawSlots => {
+  if (!Array.isArray(rawSlots) || rawSlots.length === 0) {
+    return [];
+  }
+
+  return rawSlots
+    .map((slot, index) => {
+      const displayStart =
+        slot?.display_time ??
+        slot?.startTime ??
+        slot?.start ??
+        slot?.from ??
+        '';
+      const displayEnd =
+        slot?.display_end_time ??
+        slot?.endTime ??
+        slot?.end ??
+        slot?.to ??
+        '';
+      const combinedTime = slot?.time
+        ? slot.time
+        : [displayStart, displayEnd].filter(Boolean).join(' - ');
+      const derivedStatus = slot?.status ?? (slot?.booked ? 'unavailable' : 'available');
+      const isUnavailable =
+        slot?.disabled ?? slot?.booked ?? derivedStatus !== 'available';
+
+      return {
+        id: slot?._id ?? `${index}`,
+        display_time: displayStart,
+        display_end_time: displayEnd,
+        service_end_time: slot?.service_end_time ?? displayEnd,
+        time: combinedTime,
+        booked: slot?.booked ?? false,
+        status: derivedStatus,
+        disabled: Boolean(isUnavailable),
+        raw: slot,
+      };
+    })
+    .filter(slot => slot.time && !slot.disabled);
+};
+
 const FormModeDropdown = ({
   control,
   name,
@@ -634,48 +192,92 @@ const FormModeDropdown = ({
   placeholder,
   options,
   rules,
-}) => (
-  <Controller
-    control={control}
-    name={name}
-    rules={rules}
-    render={({field: {value, onChange}, fieldState: {error}}) => (
-      <View className="mb-5">
-        {label ? (
-          <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
-            {label}
-          </Text>
-        ) : null}
-        <Dropdown
-          data={options}
-          labelField="label"
-          valueField="value"
-          value={value}
-          placeholder={placeholder}
-          onChange={item => onChange(item.value)}
-          style={styles.dropdown}
-          selectedTextStyle={styles.selectedText}
-          placeholderStyle={styles.placeholderText}
-          itemTextStyle={styles.itemText}
-          renderItem={item => (
-            <View className="px-4 py-[10px] border-b border-[#F2F4F7]">
-              <Text className="font-poppins text-base text-[#1D293D]">
-                {item.label}
-              </Text>
-            </View>
-          )}
-          containerStyle={styles.dropdownContainer}
-          activeColor="#F3F4F6"
-        />
-        {error ? (
-          <Text className="text-primary2 font-poppins text-xs mt-1">
-            {error.message}
-          </Text>
-        ) : null}
-      </View>
-    )}
-  />
-);
+  isDisabled = false,
+}) => {
+  const dropdownRef = useRef(null);
+  const hasEnabledOptions = Array.isArray(options)
+    ? options.some(option => !option.disabled)
+    : false;
+
+  return (
+    <Controller
+      control={control}
+      name={name}
+      rules={rules}
+      render={({field: {value, onChange: onFieldChange}, fieldState: {error}}) => (
+        <View className="mb-5">
+          {label ? (
+            <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
+              {label}
+            </Text>
+          ) : null}
+          {!hasEnabledOptions ? (
+            <Text className="text-[#94A3B8] font-poppins text-xs mb-2">
+              No available modes for this service
+            </Text>
+          ) : null}
+          <Dropdown
+            ref={dropdownRef}
+            data={options}
+            labelField="label"
+            valueField="value"
+            value={value}
+            placeholder={
+              hasEnabledOptions ? placeholder : 'No modes available'
+            }
+            disable={isDisabled || !hasEnabledOptions}
+            onChange={() => {}}
+            confirmSelectItem
+            onConfirmSelectItem={item => {
+              const isItemDisabled = item?.disabled || item?.disable;
+              if (isItemDisabled) {
+                return;
+              }
+              onFieldChange(item.value);
+              if (dropdownRef.current?.close) {
+                dropdownRef.current.close();
+              }
+            }}
+            style={styles.dropdown}
+            selectedTextStyle={styles.selectedText}
+            placeholderStyle={styles.placeholderText}
+            itemTextStyle={styles.itemText}
+            renderItem={item => {
+              const isItemDisabled = item?.disabled || item?.disable;
+              const pointerSetting = isItemDisabled ? 'none' : 'auto';
+              return (
+                <View
+                  pointerEvents={pointerSetting}
+                  className={`px-4 py-[10px] border-b border-[#F2F4F7]${
+                    isItemDisabled ? ' bg-[#F9FAFB]' : ''
+                  }`}>
+                  <Text
+                    className={`font-poppins text-base text-[#1D293D]${
+                      isItemDisabled ? ' text-[#94A3B8]' : ''
+                    }`}>
+                    {item.label}
+                  </Text>
+                  {isItemDisabled ? (
+                    <Text className="font-poppins text-xs text-[#CBD5E1] mt-1">
+                      Not available
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            }}
+            containerStyle={styles.dropdownContainer}
+            activeColor="#F3F4F6"
+          />
+          {error ? (
+            <Text className="text-primary2 font-poppins text-xs mt-1">
+              {error.message}
+            </Text>
+          ) : null}
+        </View>
+      )}
+    />
+  );
+};
 
 const FormServiceTypeDropdown = ({
   control,
@@ -684,6 +286,7 @@ const FormServiceTypeDropdown = ({
   placeholder,
   options,
   rules,
+  isLoading = false,
 }) => (
   <Controller
     control={control}
@@ -701,7 +304,8 @@ const FormServiceTypeDropdown = ({
           labelField="label"
           valueField="value"
           value={value}
-          placeholder={placeholder}
+          placeholder={isLoading ? 'Loading service types...' : placeholder}
+          disable={isLoading}
           onChange={item => onChange(item.value)}
           style={styles.dropdown}
           selectedTextStyle={styles.selectedText}
@@ -734,12 +338,13 @@ const FormAstrologerDropdown = ({
   placeholder,
   options,
   rules,
+  isLoading = false,
 }) => (
   <Controller
     control={control}
     name={name}
     rules={rules}
-    render={({field: {value, onChange}, fieldState: {error}}) => (
+    render={({field: {value, onChange}, fieldState: {error, isTouched, isDirty}}) => (
       <View className="mb-5">
         {label ? (
           <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-2">
@@ -751,7 +356,10 @@ const FormAstrologerDropdown = ({
           labelField="label"
           valueField="value"
           value={value}
-          placeholder={placeholder}
+          placeholder={
+            isLoading ? 'Loading astrologers...' : placeholder
+          }
+          disable={isLoading}
           onChange={item => onChange(item.value)}
           style={styles.dropdown}
           selectedTextStyle={styles.selectedText}
@@ -767,7 +375,7 @@ const FormAstrologerDropdown = ({
           containerStyle={styles.dropdownContainer}
           activeColor="#F3F4F6"
         />
-        {error ? (
+        {error && (isTouched || isDirty) ? (
           <Text className="text-primary2 font-poppins text-xs mt-1">
             {error.message}
           </Text>
@@ -777,7 +385,13 @@ const FormAstrologerDropdown = ({
   />
 );
 
-const TimeSlotDropdown = ({value, onChange, options = [], error}) => {
+const TimeSlotDropdown = ({
+  value,
+  onChange,
+  options = [],
+  error,
+  isLoading = false,
+}) => {
   const data = options.map(slot => ({
     label: `${slot.display_time} - ${slot.display_end_time}`,
     value: slot.time,
@@ -790,12 +404,24 @@ const TimeSlotDropdown = ({value, onChange, options = [], error}) => {
       <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-3">
         Time Slots *
       </Text>
+      {isLoading ? (
+        <Text className="text-[#94A3B8] font-poppins text-xs mb-2">
+          Loading time slots...
+        </Text>
+      ) : null}
       <Dropdown
         data={data}
         labelField="label"
         valueField="value"
         value={value}
-        placeholder="Select suitable time slot"
+            placeholder={
+              isLoading
+                ? 'Loading time slots...'
+                : data.length > 0
+                ? 'Select suitable time slot'
+                : 'No slots available'
+            }
+        disable={isLoading || data.length === 0}
         onChange={item => {
           if (!item.disabled) {
             onChange(item.value);
@@ -826,6 +452,11 @@ const TimeSlotDropdown = ({value, onChange, options = [], error}) => {
           </View>
         )}
       />
+      {!isLoading && data.length === 0 ? (
+        <Text className="text-[#94A3B8] font-poppins text-xs mt-1">
+          No available slots for the selected filters
+        </Text>
+      ) : null}
       {error ? (
         <Text className="text-primary2 font-poppins text-xs mt-1">{error}</Text>
       ) : null}
@@ -879,7 +510,82 @@ const CheckAvailability = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const {bottom} = useSafeAreaInsets();
-  const service = route.params?.service ?? defaultService;
+  const service = route.params?.service ?? {};
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [isServiceTypeLoading, setIsServiceTypeLoading] = useState(false);
+  const [astrologers, setAstrologers] = useState([]);
+  const [isAstrologerLoading, setIsAstrologerLoading] = useState(false);
+  const [serviceModes, setServiceModes] = useState(
+    SERVICE_MODE_OPTIONS.map(mode => ({
+      ...mode,
+      disabled: true,
+      disable: true,
+    })),
+  );
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [isTimeSlotLoading, setIsTimeSlotLoading] = useState(false);
+  const [customerAddresses, setCustomerAddresses] = useState([]);
+  const [isAddressLoading, setIsAddressLoading] = useState(false);
+  const [isAddressPickerVisible, setIsAddressPickerVisible] = useState(false);
+
+  // Synchronise dropdown modes with available values by normalising
+  // service/mode aliases (e.g. "online", "pandit_center") to the three
+  // supported options and disabling everything else by default.
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchServiceTypes = async () => {
+      try {
+        setIsServiceTypeLoading(true);
+        const response = await getAvailabilityServicesType();
+        const categories = response?.data;
+
+        if (isMounted && Array.isArray(categories)) {
+          setServiceCategories(categories);
+        }
+      } catch (error) {
+        console.log('Failed to fetch service types', error);
+      } finally {
+        if (isMounted) {
+          setIsServiceTypeLoading(false);
+        }
+      }
+    };
+
+    fetchServiceTypes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAstrologers = async () => {
+      try {
+        setIsAstrologerLoading(true);
+        const response = await getAvailabilityAstrologers('astrologer');
+        const list = response?.data ?? response;
+
+        if (isMounted && Array.isArray(list)) {
+          setAstrologers(list);
+        }
+      } catch (error) {
+        console.log('Failed to fetch astrologers', error);
+      } finally {
+        if (isMounted) {
+          setIsAstrologerLoading(false);
+        }
+      }
+    };
+
+    fetchAstrologers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const serviceTypePayload = useMemo(() => {
     if (
@@ -888,32 +594,16 @@ const CheckAvailability = () => {
     ) {
       return route.params.serviceTypes;
     }
-    return STATIC_DROPDOWN_DATA;
-  }, [route.params?.serviceTypes]);
+    if (Array.isArray(serviceCategories)) {
+      return serviceCategories;
+    }
+    return [];
+  }, [route.params?.serviceTypes, serviceCategories]);
 
   const serviceTypeOptions = useMemo(
     () => buildServiceTypeOptions(serviceTypePayload),
     [serviceTypePayload],
   );
-
-  const serviceModes = useMemo(() => {
-    const baseModes = [
-      {label: 'Consult Online', value: 'consult_online'},
-      {label: 'Consult at Astrologer location', value: 'consult_location'},
-      {label: 'Pooja at Home', value: 'pooja_home'},
-    ];
-
-    const incoming = normalizeOptions(
-      route.params?.serviceModes ?? route.params?.modes,
-      baseModes,
-    );
-
-    const merged = new Map();
-    baseModes.forEach(mode => merged.set(mode.value, mode));
-    incoming.forEach(mode => merged.set(mode.value, mode));
-
-    return Array.from(merged.values());
-  }, [route.params?.serviceModes, route.params?.modes]);
 
   const astrologerPayload = useMemo(() => {
     const fromParams =
@@ -923,11 +613,15 @@ const CheckAvailability = () => {
     if (Array.isArray(fromParams) && fromParams.length) {
       return fromParams;
     }
-    return STATIC_DROPDOWN_DATA;
+    if (Array.isArray(astrologers)) {
+      return astrologers;
+    }
+    return [];
   }, [
     route.params?.astrologers,
     route.params?.pandits,
     route.params?.serviceTypes,
+    astrologers,
   ]);
 
   const astrologerOptions = useMemo(
@@ -935,34 +629,95 @@ const CheckAvailability = () => {
     [astrologerPayload],
   );
 
-  const timeSlots = useMemo(() => {
-    if (
-      Array.isArray(route.params?.timeSlots) &&
-      route.params?.timeSlots.length
-    ) {
-      return route.params.timeSlots;
-    }
-    return defaultTimeSlots;
-  }, [route.params?.timeSlots]);
+  // Synchronize dropdown modes with available values by normalizing
+  // service/mode aliases (e.g. "online", "pandit_center") to the three
+  // supported options and disabling everything else by default.
+  useEffect(() => {
+    const incoming = normalizeOptions(
+      route.params?.serviceModes ?? route.params?.modes,
+      [],
+    );
+
+    const serviceTypes = Array.isArray(service?.serviceType)
+      ? service.serviceType
+      : [];
+
+    const allowedValues = new Set();
+
+    const registerIfSupported = rawValue => {
+      if (typeof rawValue !== 'string') {
+        return;
+      }
+      let normalized = rawValue.trim().toLowerCase();
+      if (!normalized) {
+        return;
+      }
+      if (
+        normalized === 'online' ||
+        normalized === 'online_consultation' ||
+        normalized === 'virtual'
+      ) {
+        normalized = 'consult_online';
+      } else if (
+        normalized === 'consult_location' ||
+        normalized === 'astrologer_location' ||
+        normalized === 'in_person' ||
+        normalized === 'office' ||
+        normalized === 'pandit_center'
+      ) {
+        normalized = 'consult_location';
+      } else if (
+        normalized === 'home_pooja' ||
+        normalized === 'pandit_home'
+      ) {
+        normalized = 'pooja_home';
+      }
+      const supported = SERVICE_MODE_OPTIONS.find(
+        option => option.value === normalized,
+      );
+      if (supported) {
+        allowedValues.add(supported.value);
+      }
+    };
+
+    serviceTypes.forEach(registerIfSupported);
+    incoming.forEach(mode => registerIfSupported(mode?.value));
+
+    const hasAllowed = allowedValues.size > 0;
+
+    const updatedModes = SERVICE_MODE_OPTIONS.map(option => {
+      const isEnabled = hasAllowed && allowedValues.has(option.value);
+      return {
+        ...option,
+        disabled: !isEnabled,
+        disable: !isEnabled,
+      };
+    });
+
+    setServiceModes(updatedModes);
+  }, [route.params?.modes, route.params?.serviceModes, service?.serviceType, service]);
 
   const {
     control,
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: {isValid},
   } = useForm({
     mode: 'onChange',
     defaultValues: {
       serviceType:
         serviceTypeOptions.length === 1 ? serviceTypeOptions[0].value : '',
-      serviceMode: serviceModes.length === 1 ? serviceModes[0].value : '',
+      serviceMode: '',
       pandit: astrologerOptions.length === 1 ? astrologerOptions[0].value : '',
       date: moment().format('YYYY-MM-DD'),
       timeSlot: '',
+      recipient: 'self',
       fullName: '',
       phoneNumber: '',
       email: '',
+      addressId: '',
     },
   });
 
@@ -970,6 +725,162 @@ const CheckAvailability = () => {
   const selectedMode = watch('serviceMode');
   const selectedPandit = watch('pandit');
   const selectedDate = watch('date');
+  const selectedAddressId = watch('addressId');
+
+  const selectedAddress = useMemo(() => {
+    if (!selectedAddressId) {
+      return null;
+    }
+
+    return (
+      customerAddresses.find(address => {
+        const idValue =
+          address?._id ?? (address?.id != null ? String(address.id) : '');
+        return idValue === selectedAddressId;
+      }) ?? null
+    );
+  }, [customerAddresses, selectedAddressId]);
+
+  const selectedAddressName = useMemo(() => {
+    if (!selectedAddress) {
+      return '';
+    }
+
+    const fullName = formatFullName(
+      selectedAddress?.firstName,
+      selectedAddress?.lastName,
+    );
+
+    if (fullName) {
+      return fullName;
+    }
+
+    if (selectedAddress?.addressType) {
+      const type = String(selectedAddress.addressType);
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+
+    return 'Saved Address';
+  }, [selectedAddress]);
+
+  const hasAddresses = customerAddresses.length > 0;
+  const hasMultipleAddresses = customerAddresses.length > 1;
+
+  useEffect(() => {
+    if (!hasMultipleAddresses && isAddressPickerVisible) {
+      setIsAddressPickerVisible(false);
+    }
+  }, [hasMultipleAddresses, isAddressPickerVisible]);
+
+  const handleAddressSelect = useCallback(
+    addressId => {
+      if (!addressId) {
+        return;
+      }
+
+      setValue('addressId', addressId, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+      setIsAddressPickerVisible(false);
+    },
+    [setValue],
+  );
+
+  const handleToggleAddressPicker = useCallback(() => {
+    if (!hasAddresses) {
+      return;
+    }
+    setIsAddressPickerVisible(prev => !prev);
+  }, [hasAddresses]);
+
+  const handleAddNewAddress = useCallback(() => {
+    if (navigation?.navigate) {
+      navigation.navigate('AddUpdateAddress');
+    }
+  }, [navigation]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchAddresses = async () => {
+      try {
+        setIsAddressLoading(true);
+        const response = await getCustomerAddresses();
+        if (!isMounted) {
+          return;
+        }
+
+        const rawAddresses = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+
+        const usableAddresses = rawAddresses.filter(
+          item => item && item.isDeleted !== true,
+        );
+
+        setCustomerAddresses(usableAddresses);
+
+        const defaultAddress =
+          usableAddresses.find(item => item?.isDefault) ?? usableAddresses[0];
+
+        const existingAddressId = getValues('addressId');
+        const defaultAddressId =
+          defaultAddress?._id ??
+          (defaultAddress?.id != null ? String(defaultAddress.id) : '');
+
+        if (!existingAddressId && defaultAddressId) {
+          setValue('addressId', defaultAddressId, {
+            shouldDirty: false,
+            shouldValidate: false,
+          });
+        }
+      } catch (error) {
+        console.log('Failed to fetch customer addresses', error);
+      } finally {
+        if (isMounted) {
+          setIsAddressLoading(false);
+        }
+      }
+    };
+
+    fetchAddresses();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [getValues, setValue]);
+
+  useEffect(() => {
+    if (
+      selectedMode &&
+      !serviceModes.some(
+        mode => mode.value === selectedMode && !mode.disabled,
+      )
+    ) {
+      setValue('serviceMode', '', {shouldValidate: true});
+    }
+  }, [selectedMode, serviceModes, setValue]);
+
+  useEffect(() => {
+    const enabledOptions = serviceModes.filter(option => !option.disabled);
+    if (enabledOptions.length === 0) {
+      if (selectedMode) {
+        setValue('serviceMode', '', {shouldValidate: true});
+      }
+      return;
+    }
+
+    const hasSelected = enabledOptions.some(
+      option => option.value === selectedMode,
+    );
+
+    if (!hasSelected) {
+      setValue('serviceMode', enabledOptions[0].value, {shouldValidate: true});
+    }
+  }, [serviceModes, selectedMode, setValue]);
 
   useEffect(() => {
     if (!selectedServiceType && serviceTypeOptions.length === 1) {
@@ -980,16 +891,114 @@ const CheckAvailability = () => {
   }, [selectedServiceType, serviceTypeOptions, setValue]);
 
   useEffect(() => {
-    if (!selectedMode && serviceModes.length === 1) {
-      setValue('serviceMode', serviceModes[0].value, {shouldValidate: true});
+    if (
+      selectedPandit &&
+      !astrologerOptions.some(option => option.value === selectedPandit)
+    ) {
+      setValue('pandit', '', {shouldValidate: true, shouldDirty: false});
     }
-  }, [selectedMode, serviceModes, setValue]);
+  }, [selectedPandit, astrologerOptions, setValue]);
 
   useEffect(() => {
     if (!selectedPandit && astrologerOptions.length === 1) {
       setValue('pandit', astrologerOptions[0].value, {shouldValidate: true});
     }
   }, [selectedPandit, astrologerOptions, setValue]);
+
+  useEffect(() => {
+    if (isTimeSlotLoading) {
+      return;
+    }
+
+    if (timeSlots.length === 1) {
+      const soleSlot = timeSlots[0];
+      if (soleSlot?.time) {
+        setValue('timeSlot', soleSlot.time, {shouldValidate: true});
+      }
+      return;
+    }
+
+    if (timeSlots.length === 0) {
+      setValue('timeSlot', '', {shouldValidate: false, shouldDirty: false});
+    }
+  }, [isTimeSlotLoading, timeSlots, setValue]);
+
+  useEffect(() => {
+    const duration = Number(service?.durationInMinutes);
+    const modeForRequest = SERVICE_MODE_REQUEST_MAP[selectedMode];
+    const astrologerDetail = astrologerOptions.find(
+      option => option.value === selectedPandit,
+    );
+    const astrologerId = astrologerDetail?.meta?._id ?? astrologerDetail?.value;
+
+    const shouldFetch =
+      Boolean(selectedDate) &&
+      Boolean(modeForRequest) &&
+      Boolean(astrologerId && astrologerId !== 'any') &&
+      Number.isFinite(duration) &&
+      duration > 0;
+
+    if (!shouldFetch) {
+      setTimeSlots([]);
+      setIsTimeSlotLoading(false);
+      setValue('timeSlot', '', {shouldValidate: false, shouldDirty: false});
+      return;
+    }
+
+    let isMounted = true;
+    setIsTimeSlotLoading(true);
+    setTimeSlots([]);
+    setValue('timeSlot', '', {shouldValidate: false, shouldDirty: false});
+
+    const payload = {
+      date: selectedDate,
+      astrologer_id: astrologerId,
+      service_type: modeForRequest,
+      service_duration: duration,
+    };
+
+    getAvailabilityTimeSlot(payload)
+      .then(response => {
+        if (!isMounted) {
+          return;
+        }
+        const rawSlots = Array.isArray(response?.data?.timeSlots)
+          ? response.data.timeSlots
+          : Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response?.timeSlots)
+          ? response.timeSlots
+          : Array.isArray(response?.slots)
+          ? response.slots
+          : Array.isArray(response)
+          ? response
+          : [];
+        const normalisedSlots = normalizeTimeSlots(rawSlots);
+        setTimeSlots(normalisedSlots);
+      })
+      .catch(error => {
+        console.log('Failed to fetch time slots', error);
+        if (isMounted) {
+          setTimeSlots([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsTimeSlotLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    selectedDate,
+    selectedMode,
+    selectedPandit,
+    service?.durationInMinutes,
+    astrologerOptions,
+    setValue,
+  ]);
 
   const [dayOffset, setDayOffset] = useState(0);
 
@@ -1050,6 +1059,33 @@ const CheckAvailability = () => {
       const timeSlotDetail = timeSlots.find(
         slot => slot.time === data.timeSlot,
       );
+      const addressDetail =
+        selectedAddress ??
+        customerAddresses.find(address => {
+          const idValue =
+            address?._id ?? (address?.id != null ? String(address.id) : '');
+          return idValue === data.addressId;
+        }) ??
+        null;
+
+      const modeLabel =
+        modeDetail?.label ??
+        SERVICE_MODE_OPTIONS.find(option => option.value === data.serviceMode)
+          ?.label ??
+        '';
+
+      const serviceTypeLabel =
+        serviceTypeDetail?.meta?.name ??
+        serviceTypeDetail?.label ??
+        serviceTypeDetail?.name ??
+        '';
+
+      const astrologerName = astrologerDetail
+        ? formatFullName(
+            astrologerDetail?.profile?.firstName ?? astrologerDetail?.firstName,
+            astrologerDetail?.profile?.lastName ?? astrologerDetail?.lastName,
+          ) || astrologerDetail?.label
+        : '';
 
       const payload = {
         ...data,
@@ -1058,6 +1094,10 @@ const CheckAvailability = () => {
         astrologerDetail: astrologerDetail?.meta ?? astrologerDetail,
         modeDetail,
         timeSlotDetail,
+        addressDetail,
+        serviceModeLabel: modeLabel,
+        serviceTypeLabel,
+        astrologerName,
       };
 
       console.log('Booking form submission', payload);
@@ -1072,6 +1112,8 @@ const CheckAvailability = () => {
       astrologerOptions,
       serviceModes,
       timeSlots,
+      selectedAddress,
+      customerAddresses,
     ],
   );
 
@@ -1106,6 +1148,7 @@ const CheckAvailability = () => {
               placeholder="Select service type"
               options={serviceTypeOptions}
               rules={{required: 'Please choose a service type'}}
+              isLoading={isServiceTypeLoading}
             />
 
             <FormModeDropdown
@@ -1124,6 +1167,7 @@ const CheckAvailability = () => {
               placeholder="Select astrologer"
               options={astrologerOptions}
               rules={{required: 'Please choose an astrologer'}}
+              isLoading={isAstrologerLoading}
             />
 
             <View className="flex-row items-center justify-between mb-4">
@@ -1213,14 +1257,42 @@ const CheckAvailability = () => {
               control={control}
               name="timeSlot"
               rules={{required: 'Please select a time slot'}}
-              render={({field: {value, onChange}, fieldState: {error}}) => (
+              render={({
+                field: {value, onChange},
+                fieldState: {error, isTouched, isDirty},
+              }) => (
                 <TimeSlotDropdown
                   value={value}
                   onChange={onChange}
                   options={timeSlots}
-                  error={error?.message}
+                  error={error && (isTouched || isDirty) ? error.message : null}
+                  isLoading={isTimeSlotLoading}
                 />
               )}
+            />
+
+            <Controller
+              control={control}
+              name="recipient"
+              render={({field: {value, onChange}}) => {
+                const toggleValue = value === 'others' ? 'right' : 'left';
+                const handleToggle = side =>
+                  onChange(side === 'right' ? 'others' : 'self');
+
+                return (
+                  <View className="mt-6">
+                    <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-3">
+                      Booking For
+                    </Text>
+                    <DualToggleSwitch
+                      value={toggleValue}
+                      onChange={handleToggle}
+                      leftLabel="For self"
+                      rightLabel="For Others"
+                    />
+                  </View>
+                );
+              }}
             />
 
             <View className="mt-3">
@@ -1264,6 +1336,118 @@ const CheckAvailability = () => {
                 },
               }}
             />
+
+            <View className="">
+              <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-3">
+                Address
+              </Text>
+              {isAddressLoading ? (
+                <Text className="text-[#94A3B8] font-poppins text-xs">
+                  Loading addresses...
+                </Text>
+              ) : hasAddresses && selectedAddress ? (
+                <>
+                  <View className="flex-row items-start justify-between rounded-3xl border border-[#EFF3F9] bg-[#F9FAFB] px-5 py-4">
+                    <View className="flex-1 pr-4">
+                      <Text className="font-poppinsSemiBold text-base text-[#1D293D]">
+                        {selectedAddressName}
+                      </Text>
+                      {selectedAddress?.phoneNumber ? (
+                        <Text className="mt-1 font-poppins text-sm text-[#475569]">
+                          {selectedAddress.phoneNumber}
+                        </Text>
+                      ) : null}
+                      <Text className="mt-1 font-poppins text-sm leading-5 text-[#475569]">
+                        {formatAddressLine(selectedAddress)}
+                      </Text>
+                    </View>
+                    {hasMultipleAddresses ? (
+                      <TouchableOpacity
+                        onPress={handleToggleAddressPicker}
+                        className="mt-1"
+                        activeOpacity={0.7}>
+                        <Text className="font-poppinsMedium text-sm text-[#FF7A00]">
+                          Change
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+
+                  {isAddressPickerVisible ? (
+                    <View
+                      className="mt-4 rounded-3xl border border-[#FFE4CC] bg-white"
+                      style={styles.savedAddressContainer}>
+                      <TouchableOpacity
+                        onPress={handleAddNewAddress}
+                        activeOpacity={0.85}
+                        className="mx-4 mt-4 rounded-2xl bg-[#FF7A00] py-3">
+                        <Text className="text-center font-poppinsSemiBold text-base text-white">
+                          +  Add New Address
+                        </Text>
+                      </TouchableOpacity>
+
+                      <View className="mt-4">
+                        {customerAddresses.map((address, index) => {
+                          const idValue =
+                            address?._id ??
+                            (address?.id != null ? String(address.id) : '');
+                          const isActive = idValue === selectedAddressId;
+                          const fullName = formatFullName(
+                            address?.firstName,
+                            address?.lastName,
+                          );
+                          const typeLabel = address?.addressType
+                            ? String(address.addressType)
+                            : '';
+                          const fallbackName = typeLabel
+                            ? `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(
+                                1,
+                              )}`
+                            : 'Saved Address';
+                          const candidateName = fullName || fallbackName;
+                          return (
+                            <TouchableOpacity
+                              key={idValue || `${index}`}
+                              onPress={() => handleAddressSelect(idValue)}
+                              activeOpacity={0.85}
+                              className={`relative px-5 py-4${
+                                index > 0 ? ' border-t border-[#F1F5F9]' : ''
+                              }`}>
+                              {isActive ? (
+                                <View
+                                  className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF7A00]"
+                                  style={styles.activeIndicator}
+                                />
+                              ) : null}
+                              <Text className="font-poppinsSemiBold text-base text-[#1D293D]">
+                                {candidateName}
+                              </Text>
+                              {address?.phoneNumber ? (
+                                <Text className="mt-1 font-poppins text-sm text-[#475569]">
+                                  {address.phoneNumber}
+                                </Text>
+                              ) : null}
+                              <Text className="mt-1 font-poppins text-sm leading-5 text-[#475569]">
+                                {formatAddressLine(address)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : null}
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleAddNewAddress}
+                  activeOpacity={0.85}
+                  className="rounded-3xl border border-dashed border-[#FF7A00] px-5 py-4">
+                  <Text className="text-center font-poppins text-sm text-[#FF7A00]">
+                    + Add New Address
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </ScrollView>
 
@@ -1337,5 +1521,13 @@ const styles = StyleSheet.create({
     height: 76,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  savedAddressContainer: {
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  activeIndicator: {
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
   },
 });

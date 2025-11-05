@@ -103,3 +103,43 @@ export const getSingleServicesDetails = async (id) => {
     throw error;
   }
 };
+
+export const getAvailabilityServicesType = async () => {
+  try {
+    const response = await apiClient.get("/service-categories/public/dropdown");
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const getAvailabilityAstrologers = async (employeeType) => {
+  try {
+    const response = await apiClient.post("/employee-users/astroguid/public/get-all", { employeeType });
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const getAvailabilityTimeSlot = async (slotData) => {
+  try {
+    const response = await apiClient.post("/calender/check-availability", slotData);
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const getCustomerAddresses = async () => {
+  try {
+    const response = await apiClient.get("customer-address/get-all");
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};

@@ -103,6 +103,35 @@ const formatTimeRange = (slotDetail, fallback = '') => {
   )}`;
 };
 
+const formatFullName = (firstName, lastName) =>
+  [firstName, lastName].filter(Boolean).join(' ').trim();
+
+const formatAddressLine = address => {
+  if (!address) {
+    return '';
+  }
+
+  const parts = [
+    address?.address,
+    address?.city,
+    address?.state,
+    address?.country,
+  ]
+    .map(part => (part ? String(part).trim() : ''))
+    .filter(Boolean);
+
+  const base = parts.join(', ');
+  if (!address?.postalCode) {
+    return base;
+  }
+
+  if (!base) {
+    return String(address.postalCode);
+  }
+
+  return `${base} - ${address.postalCode}`;
+};
+
 const InfoRow = ({icon, label, value}) => {
   if (!value) {
     return null;
@@ -133,10 +162,12 @@ const BookingSummary = () => {
 
   const bookingDetails = route.params?.bookingDetails ?? {};
   const service = bookingDetails.service ?? {};
+  const addressDetail = bookingDetails?.addressDetail ?? null;
 
   const serviceTypeName =
     bookingDetails?.serviceTypeDetail?.name ??
     bookingDetails?.serviceTypeDetail?.label ??
+    bookingDetails?.serviceTypeLabel ??
     service?.title ??
     '';
 
@@ -144,7 +175,9 @@ const BookingSummary = () => {
     service?.sessionDuration ?? bookingDetails?.sessionDuration ?? DEFAULT_DURATION;
 
   const modeLabel =
-    bookingDetails?.modeDetail?.label ?? bookingDetails?.serviceModeLabel ?? DEFAULT_MODE;
+    bookingDetails?.modeDetail?.label ??
+    bookingDetails?.serviceModeLabel ??
+    DEFAULT_MODE;
 
   const formattedDate = useMemo(() => {
     if (!bookingDetails?.date) {
@@ -203,6 +236,22 @@ const BookingSummary = () => {
       icon: <UserCircleIcon size={21} stroke="#1D293D" />,
     },
     {
+      label: 'Booking For',
+      value:
+        bookingDetails?.recipient === 'others'
+          ? 'Someone else'
+          : 'Self',
+      icon: <UserCircleIcon size={21} stroke="#1D293D" />,
+    },
+    {
+      label: 'Astrologer',
+      value:
+        bookingDetails?.astrologerName ??
+        bookingDetails?.astrologerDetail?.name ??
+        bookingDetails?.astrologerDetail?.label,
+      icon: <UserCircleIcon size={21} stroke="#1D293D" />,
+    },
+    {
       label: 'Email Address',
       value: bookingDetails?.email,
       icon: <MailOutlineIcon size={22} stroke="#1D293D" />,
@@ -213,6 +262,29 @@ const BookingSummary = () => {
       icon: <PhoneOutlineIcon size={21} stroke="#1D293D" />,
     },
   ];
+
+  const addressName = useMemo(() => {
+    if (!addressDetail) {
+      return '';
+    }
+    const composed = formatFullName(
+      addressDetail?.firstName,
+      addressDetail?.lastName,
+    );
+    if (composed) {
+      return composed;
+    }
+    if (addressDetail?.addressType) {
+      const raw = String(addressDetail.addressType);
+      return raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
+    return 'Saved Address';
+  }, [addressDetail]);
+
+  const formattedAddress = useMemo(
+    () => formatAddressLine(addressDetail),
+    [addressDetail],
+  );
 
   return (
     <View className="flex-1 bg-[#FEF8EF]">
@@ -297,6 +369,31 @@ const BookingSummary = () => {
                 ))}
               </View>
             </View>
+
+            {addressDetail ? (
+              <View className="mt-5">
+                <Text className="font-poppinsSemiBold text-[16px] text-[#1D293D] mb-3">
+                  Address:
+                </Text>
+                <View
+                  className="bg-white rounded-[18px] border border-[#E4E9F5] px-4 py-3"
+                  style={styles.cardShadowLight}>
+                  <Text className="font-poppinsSemiBold text-[15px] text-[#1D293D]">
+                    {addressName}
+                  </Text>
+                  {addressDetail?.phoneNumber ? (
+                    <Text className="mt-1 font-poppins text-[14px] text-[#475569]">
+                      {addressDetail.phoneNumber}
+                    </Text>
+                  ) : null}
+                  {formattedAddress ? (
+                    <Text className="mt-1 font-poppins text-[14px] text-[#475569] leading-[20px]">
+                      {formattedAddress}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       </View>
@@ -359,6 +456,13 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: {width: 0, height: 8},
     elevation: 6,
+  },
+  cardShadowLight: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 4},
+    elevation: 2,
   },
 });
 
