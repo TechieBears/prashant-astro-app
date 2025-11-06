@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { store } from '../redux';
 import { logout } from '../redux/slices/authSlice';
-
-const BASE_URL = 'https://your-api-domain.com/api';
+import { BASE_URL } from './configConstant';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -14,7 +13,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const token = state.auth.token;
+    const token = state?.auth?.token;
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
