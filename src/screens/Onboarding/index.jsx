@@ -9,6 +9,9 @@ import {
 } from "react-native";
 import { ArrowRight02Icon, ArrowLeft02Icon } from 'hugeicons-react-native';
 import { BlurView } from '@react-native-community/blur';
+import { useDispatch } from "react-redux";
+import {setSkip} from "../../redux/slices/authSlice";
+
 
 const { width, height } = Dimensions.get("window");
 
@@ -33,14 +36,16 @@ const slides = [
   },
 ];
 
-const OnboardingScreen = ({ navigation }) => {
+const OnboardingScreen = () => {
+  const dispatch = useDispatch();
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
-      navigation.replace("Login");
+      dispatch(setSkip(true));
     }
   };
 

@@ -8,10 +8,11 @@ import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/Onboarding';
 
 const RootNavigator = () => {
-  // const { isAuthenticated, skip } = useSelector(state => state.auth);
+  // isAuthenticated, 
+  const { skip } = useSelector(state => state.auth);
   const [showSplash, setShowSplash] = useState(true);
-  const isAuthenticated = true;
-  const skip = true;
+  const isAuthenticated = false;
+  // const skip = false;
   // Show splash screen first
    // Show the splash screen for 2 seconds
   useEffect(() => {
