@@ -6,6 +6,7 @@ import { Mail01Icon, LockPasswordIcon, GoogleIcon, Facebook01Icon, AppleIcon, Vi
 import GradientButton from '../../components/Buttons/GradientButton';
 import TextInput from '../../components/Inputs/TextInput';
 import { setUser } from '../../redux/slices/authSlice';
+import { loginApi } from '../../services/api';
 
 const Checkbox = ({ checked, onPress, label }) => {
   return (
@@ -50,13 +51,23 @@ const Login = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  const onSubmit = (data) => {
-    console.log('Login data:', data);
-    // Simulate successful login
-    dispatch(setUser({
-      user: { email: data.email, name: 'User' },
-      token: 'mock-token-123'
-    }));
+  const onSubmit = async (data) => {
+    try {
+      const response = await loginApi(data);
+      console.log('Login successful:', response);
+      if (response?.success) {
+        dispatch(setUser({
+          user: response?.data?.user,
+          token: response?.data?.token
+        }));
+      } else {
+        console.log('Login failed:', response?.message);
+      }
+    } catch (error) {
+      // add toaster for error
+      console.log('Login failed:', error);
+    }
+
   };
 
   const handleGoogleLogin = () => {

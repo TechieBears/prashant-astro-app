@@ -13,10 +13,20 @@ export const loginApi = async (credentials) => {
 
 export const registerApi = async (userData) => {
   try {
-    const response = await apiClient.post('/auth/register', userData);
+    const response = await apiClient.post('/customer-users/register', userData);
     return response.data;
   } catch (error) {
     console.log('Register error:', error);
+    throw error;
+  }
+};
+
+export const deleteApi = async () => {
+  try {
+    const response = await apiClient.post('/customer-users/delete');
+    return response.data;
+  } catch (error) {
+    console.log('Delete error:', error);
     throw error;
   }
 };

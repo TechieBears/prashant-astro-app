@@ -6,12 +6,13 @@ import BackButton from '../../components/Buttons/BackButton';
 import TextInput from '../../components/Inputs/TextInput';
 import RadioButton from '../../components/Inputs/RadioInput';
 import FileInput from '../../components/Inputs/FileInput';
+import SelectDropdown from '../../components/Inputs/SelectDropdown';
 
 export default function EditProfile() {
   const [gender, setGender] = useState('Male');
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  const { control, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
       fullName: '',
       email: '',
@@ -20,6 +21,15 @@ export default function EditProfile() {
       confirmPassword: '',
     }
   });
+
+    const titleOptions = [
+    { label: 'Mr', value: 'Mr' },
+    { label: 'Mrs', value: 'Mrs' },
+    { label: 'Miss', value: 'Miss' },
+    { label: 'Baby', value: 'Baby' },
+    { label: 'Master', value: 'Master' }
+  ];
+
 
   const requestPermission = async () => {
     if (Platform.OS === 'android') {
@@ -73,35 +83,55 @@ export default function EditProfile() {
       <ScrollView className='px-6 py-4'>
         <BackButton heading={'Edit Basic Details'} />
         <View className='flex mt-6 gap-3'> 
+          <View className="mb-4">
+            <SelectDropdown
+              label="Title *"
+              placeholder="Select title"
+              options={titleOptions}
+              value={watch('title')}
+              onSelect={(selectedTitle) => setValue('title', selectedTitle.value)}
+              error={errors?.title?.message}
+            />
+          </View>
           {/* Full Name Input */}
-          <TextInput
-            control={control}
-            label="Full Name *"
-            name="fullName"
-            placeholder="Enter full name"
-            containerStyle="mb-0"
-            inputStyle="bg-white"
-            rules={{
-              required: 'Full name is required',
-              minLength: { value: 2, message: 'Name must be at least 2 characters' },
-            }}
-          />
+         {/* First Name Input */}
+          <View className="mb-4">
+            <TextInput
+              control={control}
+              label="First Name *"
+              name="firstName"
+              placeholder="Enter first name"
+              containerStyle="mb-0"
+              inputStyle="bg-white"
+              rules={{
+                required: 'First name is required',
+                minLength: {
+                  value: 2,
+                  message: 'First name must be at least 2 characters'
+                }
+              }}
+            />
+          </View>
 
-          {/* Email Input */}
-          <TextInput
-            control={control}
-            label="Email *"
-            name="email"
-            placeholder="Enter email address"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            containerStyle="mb-0"
-            inputStyle="bg-white"
-            rules={{
-              required: 'Email is required',
-              pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' },
-            }}
-          />
+          {/* Last Name Input */}
+          <View className="mb-4">
+            <TextInput
+              control={control}
+              label="Last Name *"
+              name="lastName"
+              placeholder="Enter last name"
+              containerStyle="mb-0"
+              inputStyle="bg-white"
+              rules={{
+                required: 'Last name is required',
+                minLength: {
+                  value: 2,
+                  message: 'Last name must be at least 2 characters'
+                }
+              }}
+            />
+          </View>
+
 
           {/* Phone Number Input */}
           <TextInput

@@ -21,8 +21,12 @@ import {
   Delete02Icon,
   Logout05Icon,
 } from 'hugeicons-react-native';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
+import { deleteApi } from '../../services/api';
 
 export default function Profile({ navigation }) {
+  const dispatch = useDispatch();
   const menuItems = [
     { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
     { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F', redirect: 'MyOrders' },
@@ -31,6 +35,27 @@ export default function Profile({ navigation }) {
     { icon: HeadsetIcon, label: 'Customer Support', color: '#246DF2', redirect: 'CustomerSupport' },
     { icon: InformationDiamondIcon, label: 'About Us', color: '#00B8DB', redirect: 'About' },
   ];
+
+  const handleLogout = () => {
+    try {
+      dispatch(logout());
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const handleDelete = async() => {
+    try {
+      const response = await deleteApi();
+      if(response?.success){
+        dispatch(logout());
+      }else{
+        console.error('Account deletion failed:', response?.message);
+      }
+    } catch (error) {
+      console.error('Account deletion failed:', error);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -96,10 +121,10 @@ export default function Profile({ navigation }) {
           })}
         </View>
         <View className='flex px-6 mt-6 space-y-4 mb-10 justify-end h-[30%] gap-4'>
-          <TouchableOpacity className='border p-2 py-3 border-slate-800 rounded-xl flex flex-row justify-center items-center gap-2'>
+          <TouchableOpacity onPress={() => handleLogout()} className='border p-2 py-3 border-slate-800 rounded-xl flex flex-row justify-center items-center gap-2'>
           <Text className='text-center text-slate-800 text-md'>Logout</Text> <Logout05Icon size={18} color="#1D293D" /> 
           </TouchableOpacity>
-          <TouchableOpacity className='p-2 py-3 bg-red-600 rounded-xl flex flex-row justify-center items-center gap-2'>
+          <TouchableOpacity onPress={() => handleDelete()} className='p-2 py-3 bg-red-600 rounded-xl flex flex-row justify-center items-center gap-2'>
              <Text className='text-center text-white text-md'>Delete Account</Text> <Delete02Icon size={18} color="#fff" /> 
           </TouchableOpacity>
         </View>

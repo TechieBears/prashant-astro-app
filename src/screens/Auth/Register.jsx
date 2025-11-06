@@ -1,69 +1,59 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
-import { GoogleIcon, Facebook01Icon, AppleIcon, ViewIcon, ViewOffSlashIcon } from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
 import TextInput from '../../components/Inputs/TextInput';
 import { setUser } from '../../redux/slices/authSlice';
+import { registerApi } from '../../services/api';
+import SelectDropdown from '../../components/Inputs/SelectDropdown';
 import RadioButton from '../../components/Inputs/RadioInput';
-
-const SocialButton = ({ icon, bgColor = 'bg-white', onPress }) => {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      className={`w-16 h-16 rounded-full ${bgColor} items-center justify-center shadow-sm`}
-      style={{
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }}
-    >
-      {icon}
-    </TouchableOpacity>
-  );
-};
 
 const Register = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { control, handleSubmit, formState: { errors }, watch } = useForm({
+  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm({
     defaultValues: {
-      fullName: '',
+      title: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      phoneNumber: '',
+      mobileNo: '',
       password: '',
       confirmPassword: '',
+      referralCode: ''
     }
   });
-
+  
   const [gender, setGender] = useState('Male');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const password = watch('password');
 
-  const onSubmit = (data) => {
-    console.log('Register data:', { ...data, gender });
-    // Simulate successful registration
-    dispatch(setUser({
-      user: { email: data.email, name: data.fullName, phone: data.phoneNumber, gender },
-      token: 'mock-token-123'
-    }));
+  const onSubmit = async (data) => {
+    try {
+      const response = await registerApi({...data, gender : gender, registerType : 'normal'});
+      console.log('Registration response:', response);
+      if (response.success) {
+        dispatch(setUser({
+          user: response?.data?.user,
+          token: response?.data?.token
+        }));
+      } else {
+        console.log('Registration error:', response.message);
+      }
+      console.log('API Response:', response);
+    } catch (error) {
+      console.log('Registration failed:', error);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google signup');
-  };
-
-  const handleFacebookLogin = () => {
-    console.log('Facebook signup');
-  };
-
-  const handleAppleLogin = () => {
-    console.log('Apple signup');
-  };
+  const titleOptions = [
+    { label: 'Mr', value: 'Mr' },
+    { label: 'Mrs', value: 'Mrs' },
+    { label: 'Miss', value: 'Miss' },
+    { label: 'Baby', value: 'Baby' },
+    { label: 'Master', value: 'Master' }
+  ];
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -84,29 +74,79 @@ const Register = ({ navigation }) => {
             </Text>
           </View>
 
-          {/* Full Name Input */}
+          {/* Title Dropdown */}
           <View className="mb-4">
+            <SelectDropdown
+              label="Title *"
+              placeholder="Select title"
+              options={titleOptions}
+              value={watch('title')}
+              onSelect={(selectedTitle) => setValue('title', selectedTitle.value)}
+              error={errors?.title?.message}
+            />
+          </View>
 
+          {/* First Name Input */}
+          <View className="mb-4">
             <TextInput
               control={control}
-              label="Full Name *"
-              name="fullName"
-              placeholder="Enter full name"
+              label="First Name *"
+              name="firstName"
+              placeholder="Enter first name"
               containerStyle="mb-0"
               inputStyle="bg-white"
               rules={{
-                required: 'Full name is required',
+                required: 'First name is required',
                 minLength: {
                   value: 2,
-                  message: 'Name must be at least 2 characters'
+                  message: 'First name must be at least 2 characters'
                 }
               }}
             />
           </View>
 
+          {/* Last Name Input */}
+          <View className="mb-4">
+            <TextInput
+              control={control}
+              label="Last Name *"
+              name="lastName"
+              placeholder="Enter last name"
+              containerStyle="mb-0"
+              inputStyle="bg-white"
+              rules={{
+                required: 'Last name is required',
+                minLength: {
+                  value: 2,
+                  message: 'Last name must be at least 2 characters'
+                }
+              }}
+            />
+          </View>
+          {/* Gender Input */}
+          <View className="mb-4">
+            <Text className="text-text1 font-poppinsMedium text-sm mb-3">Gender *</Text>
+          <View className="flex-row items-center">
+            <RadioButton
+              selected={gender === 'Male'}
+              onPress={() => setGender('Male')}
+              label="Male"
+            />
+            <RadioButton
+              selected={gender === 'Female'}
+              onPress={() => setGender('Female')}
+              label="Female"
+            />
+            <RadioButton
+              selected={gender === 'Other'}
+              onPress={() => setGender('Other')}
+              label="Other"
+            />
+          </View>
+          </View>
+
           {/* Email Input */}
           <View className="mb-4">
-
             <TextInput
               control={control}
               label="Email *"
@@ -126,52 +166,27 @@ const Register = ({ navigation }) => {
             />
           </View>
 
-          {/* Phone Number Input */}
+          {/* Mobile Number Input */}
           <View className="mb-4">
-
             <TextInput
               control={control}
-              label="Phone Number *"
-              name="phoneNumber"
-              placeholder="Enter phone number"
+              label="Mobile Number *"
+              name="mobileNo"
+              placeholder="Enter mobile number"
               keyboardType="phone-pad"
               containerStyle="mb-0"
               inputStyle="bg-white"
               rules={{
-                required: 'Phone number is required',
+                required: 'Mobile number is required',
                 pattern: {
-                  value: /^[0-9]{10}$/,
-                  message: 'Please enter a valid 10-digit phone number'
+                  value: /^[0-9]{10}$/i,
+                  message: 'Please enter a valid 10-digit mobile number'
                 }
               }}
             />
           </View>
 
-          {/* Gender Selection */}
-          <View className="mb-4">
-            <Text className="text-text1 font-poppinsMedium text-sm mb-3">
-              Gender *
-            </Text>
-            <View className="flex-row items-center">
-              <RadioButton
-                selected={gender === 'Male'}
-                onPress={() => setGender('Male')}
-                label="Male"
-              />
-              <RadioButton
-                selected={gender === 'Female'}
-                onPress={() => setGender('Female')}
-                label="Female"
-              />
-              <RadioButton
-                selected={gender === 'Other'}
-                onPress={() => setGender('Other')}
-                label="Other"
-              />
-            </View>
-          </View>
-
-          {/* Create Password Input */}
+          {/* Password Input */}
           <View className="mb-4">
             <TextInput
               control={control}
@@ -203,9 +218,20 @@ const Register = ({ navigation }) => {
               inputStyle="border-0 px-0 py-0"
               rules={{
                 required: 'Please confirm your password',
-                validate: (value) =>
-                  value === password || 'Passwords do not match'
+                validate: (value) => value === password || 'Passwords do not match'
               }}
+            />
+          </View>
+
+          {/* Referral Code Input */}
+          <View className="mb-4">
+            <TextInput
+              control={control}
+              label="Referral Code"
+              name="referralCode"
+              placeholder="Enter referral code"
+              containerStyle="mb-0"
+              inputStyle="bg-white"
             />
           </View>
 
@@ -232,35 +258,6 @@ const Register = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Divider */}
-          <View className="flex-row items-center mb-8">
-            <View className="flex-1 h-px bg-gray-300" />
-            <Text className="text-text2 font-poppins text-sm mx-4">
-              Or Continue with
-            </Text>
-            <View className="flex-1 h-px bg-gray-300" />
-          </View>
-
-          {/* Social Login Buttons */}
-          <View className="flex-row justify-center items-center mb-12" style={{ gap: 24 }}>
-            <SocialButton
-              icon={<GoogleIcon size={28} color="#DB4437" />}
-              bgColor="bg-white"
-              onPress={handleGoogleLogin}
-            />
-
-            <SocialButton
-              icon={<Facebook01Icon size={28} color="#FFFFFF" />}
-              bgColor="bg-[#1877F2]"
-              onPress={handleFacebookLogin}
-            />
-
-            <SocialButton
-              icon={<AppleIcon size={28} color="#FFFFFF" />}
-              bgColor="bg-black"
-              onPress={handleAppleLogin}
-            />
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
