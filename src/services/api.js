@@ -183,3 +183,40 @@ export const bookService = async (bookingPayload) => {
     throw error;
   }
 };
+
+// Product APIs
+
+export const getProducts = async () => {
+  try {
+    const response = await apiClient.get('/product/public/active');
+    return response.data;
+  } catch (error) {
+    console.log('Get products error:', error);
+    throw error;
+  }
+};
+
+export const getProductsCategories = async () => {
+  try {
+    const response = await apiClient.get('product/public/filter');
+    return response.data;
+  } catch (error) {
+    console.log('Get product categories error:', error);
+    throw error;
+  }
+};
+
+export const getProductDetails = async productId => {
+  try {
+    if (!productId) {
+      throw new Error('Product ID is required');
+    }
+    const response = await apiClient.get(
+      `/product/public/active-single?id=${productId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};

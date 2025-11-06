@@ -1,4 +1,10 @@
-import React, {useMemo, useState, useCallback, useRef} from 'react';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -7,123 +13,381 @@ import {
   TouchableOpacity,
   FlatList,
   Platform,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
 import {Search01Icon} from 'hugeicons-react-native';
 import {MicOutlineIcon, ProductFilterIcon} from '../../utils/svgIcons';
 import ProductCard from '../../components/Cards/Product';
 import {HEADER_GRADIENT} from '../../utils/gradients';
 import PriceRangeSlider from '../../components/Controls/PriceRangeSlider';
-
-const PRODUCT_DATA = [
-  {
-    id: 'prod-1',
-    title: 'Rudraksha',
-    price: 3520,
-    rating: 4.2,
-    image:
-      'https://images.unsplash.com/photo-1610036759763-31948feac89b?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'prod-2',
-    title: 'James stone',
-    price: 3520,
-    rating: 4.1,
-    image:
-      'https://images.unsplash.com/photo-1617038698784-7c0b3f92d218?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'prod-3',
-    title: 'Bracelets',
-    price: 3520,
-    rating: 4,
-    image:
-      'https://images.unsplash.com/photo-1605106702849-8a0b2b50f4b9?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'prod-4',
-    title: 'Yantras',
-    price: 3520,
-    rating: 4.3,
-    image:
-      'https://images.unsplash.com/photo-1555967523-6e6a818f81aa?auto=format&fit=crop&w=600&q=80',
-  },
-];
-
-const PRICE_MIN = 200;
-const PRICE_MAX = 6800;
-const CATEGORY_OPTIONS = [
-  {id: 'cat-amulets', label: 'Amulets', count: 3},
-  {id: 'cat-candles', label: 'Candles', count: 3},
-  {id: 'cat-divination', label: 'Divination', count: 2},
-  {id: 'cat-gemstone', label: 'Gemstone', count: 6},
-  {id: 'cat-uncategorized', label: 'Uncategorized', count: 0},
-];
+import {getProducts, getProductsCategories} from '../../services/api';
 
 const ProductScreen = () => {
   const {top, bottom} = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [priceRange, setPriceRange] = useState({min: 400, max: 950});
-  const [selectedCategories, setSelectedCategories] = useState(
-    new Set(['cat-amulets']),
-  );
-  const [range, setRange] = useState({low: 100, high: 800});
+  const [priceRange, setPriceRange] = useState({min: 0, max: 0});
+  const [pendingPriceRange, setPendingPriceRange] = useState({
+    min: 0,
+    max: 0,
+  });
+  const [priceBounds, setPriceBounds] = useState({min: 0, max: 0});
+  const [selectedCategories, setSelectedCategories] = useState(new Set());
+  const [pendingCategories, setPendingCategories] = useState(new Set());
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
+  const [categoryData, setCategoryData] = useState([]);
+  const [hasProductPrices, setHasProductPrices] = useState(false);
   const sheetRef = useRef(null);
-  const handlePriceChange = useCallback((low, high) => {
-    setPriceRange({min: low, max: high});
+  const isMountedRef = useRef(true);
+  const windowHeight = useMemo(() => Dimensions.get('window').height, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setFetchError('');
+    try {
+      const response = await getProducts();
+      const items = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.results)
+        ? response.results
+        : Array.isArray(response)
+        ? response
+        : [];
+      if (isMountedRef.current) {
+        setProducts(items);
+        if (items.length) {
+          const prices = items
+            .map(product =>
+              Number(
+                product?.sellingPrice ??
+                  product?.price ??
+                  product?.mrpPrice ??
+                  product?.amount,
+              ),
+            )
+            .filter(value => Number.isFinite(value));
+          if (prices.length) {
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const bounds = {min: minPrice, max: maxPrice};
+            setPriceBounds(bounds);
+            setPriceRange(bounds);
+            setPendingPriceRange(bounds);
+            setHasProductPrices(true);
+          } else {
+            setPriceBounds({min: 0, max: 0});
+            setPriceRange({min: 0, max: 0});
+            setPendingPriceRange({min: 0, max: 0});
+            setHasProductPrices(false);
+          }
+        } else {
+          setPriceBounds({min: 0, max: 0});
+          setPriceRange({min: 0, max: 0});
+          setPendingPriceRange({min: 0, max: 0});
+          setHasProductPrices(false);
+        }
+      }
+    } catch (error) {
+      console.log('Fetch products error:', error);
+      if (isMountedRef.current) {
+        setFetchError('Unable to load products right now.');
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await getProductsCategories();
+      const options = (() => {
+        if (Array.isArray(response?.category)) {
+          return response.category;
+        }
+        if (Array.isArray(response?.data?.category)) {
+          return response.data.category;
+        }
+        if (Array.isArray(response?.data?.items)) {
+          return response.data.items;
+        }
+        if (Array.isArray(response?.data)) {
+          return response.data;
+        }
+        if (Array.isArray(response?.results)) {
+          return response.results;
+        }
+        if (Array.isArray(response?.payload)) {
+          return response.payload;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      })();
+      if (isMountedRef.current) {
+        setCategoryData(options);
+      }
+    } catch (error) {
+      console.log('Fetch product categories error:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const handlePriceChange = useCallback(
+    (low, high) => {
+      const nextMin = Number(low);
+      const nextMax = Number(high);
+      setPendingPriceRange({
+        min: Number.isFinite(nextMin) ? nextMin : priceBounds.min,
+        max: Number.isFinite(nextMax) ? nextMax : priceBounds.max,
+      });
+    },
+    [priceBounds],
+  );
+
   const toggleCategory = useCallback(categoryId => {
-    setSelectedCategories(prev => {
+    if (categoryId == null) {
+      return;
+    }
+    const normalizedId = String(categoryId);
+    setPendingCategories(prev => {
       const next = new Set(prev);
-      if (next.has(categoryId)) {
-        next.delete(categoryId);
+      if (next.has(normalizedId)) {
+        next.delete(normalizedId);
       } else {
-        next.add(categoryId);
+        next.add(normalizedId);
       }
       return next;
     });
   }, []);
 
   const handleFilterReset = useCallback(() => {
-    setPriceRange({min: 400, max: 950});
+    const resetRange = {min: priceBounds.min, max: priceBounds.max};
+    setPriceRange(resetRange);
+    setPendingPriceRange(resetRange);
     setSelectedCategories(new Set());
-  }, []);
+    setPendingCategories(new Set());
+  }, [priceBounds.max, priceBounds.min]);
 
   const handleFilterApply = useCallback(() => {
+    const clampedMin = Math.max(
+      priceBounds.min,
+      Math.min(pendingPriceRange.min, priceBounds.max),
+    );
+    const clampedMax = Math.max(
+      clampedMin,
+      Math.min(pendingPriceRange.max, priceBounds.max),
+    );
+    setPriceRange({min: clampedMin, max: clampedMax});
+    setPendingPriceRange({min: clampedMin, max: clampedMax});
+    setSelectedCategories(new Set(pendingCategories));
     sheetRef.current?.close();
-  }, []);
+  }, [
+    pendingCategories,
+    pendingPriceRange.max,
+    pendingPriceRange.min,
+    priceBounds.max,
+    priceBounds.min,
+  ]);
+
+  const handleOpenFilter = useCallback(() => {
+    setPendingPriceRange(priceRange);
+    setPendingCategories(new Set(selectedCategories));
+    sheetRef.current?.open();
+  }, [priceRange, selectedCategories]);
 
   const filteredProducts = useMemo(() => {
+    const source = Array.isArray(products) ? products : [];
     const term = searchTerm.trim().toLowerCase();
-    if (!term) {
-      return PRODUCT_DATA;
+    const fallbackMin = Number.isFinite(priceBounds.min)
+      ? priceBounds.min
+      : 0;
+    const fallbackMax = Number.isFinite(priceBounds.max)
+      ? priceBounds.max
+      : fallbackMin;
+    const priceMin = Number.isFinite(priceRange.min)
+      ? priceRange.min
+      : fallbackMin;
+    const priceMax = Number.isFinite(priceRange.max)
+      ? priceRange.max
+      : fallbackMax;
+    const hasPriceFilter = hasProductPrices;
+    const hasCategoryFilter = selectedCategories.size > 0;
+
+    return source.filter(product => {
+      const name = (product?.name || '').toLowerCase();
+      const matchesTerm = term ? name.includes(term) : true;
+      const rawPrice =
+        product?.sellingPrice ??
+        product?.price ??
+        product?.mrpPrice ??
+        product?.amount;
+      const numericPrice = Number(rawPrice);
+      const inPrice =
+        !hasPriceFilter ||
+        (!Number.isFinite(numericPrice)
+          ? true
+          : numericPrice >= priceMin && numericPrice <= priceMax);
+      const categoryId = product?.category?._id
+        ? String(product.category._id)
+        : product?.categoryId
+        ? String(product.categoryId)
+        : '';
+      const inCategory =
+        !hasCategoryFilter ||
+        (categoryId && selectedCategories.has(categoryId));
+      return matchesTerm && inPrice && inCategory;
+    });
+  }, [
+    hasProductPrices,
+    priceBounds,
+    priceRange,
+    products,
+    searchTerm,
+    selectedCategories,
+  ]);
+
+  const categoryOptions = useMemo(() => {
+    const productCounts = products.reduce((acc, product) => {
+      const categoryId = product?.category?._id
+        ? String(product.category._id)
+        : product?.categoryId
+        ? String(product.categoryId)
+        : null;
+      if (categoryId) {
+        acc[categoryId] = (acc[categoryId] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
+    return categoryData
+      .map(option => {
+        const id = option?._id
+          ? String(option._id)
+          : option?.id
+          ? String(option.id)
+          : null;
+        if (!id) {
+          return null;
+        }
+        return {
+          id,
+          label: option?.name ?? 'Unnamed',
+          count: productCounts[id] ?? 0,
+        };
+      })
+      .filter(Boolean);
+  }, [categoryData, products]);
+
+  const sliderBounds = useMemo(() => {
+    const minBound = Number.isFinite(priceBounds.min) ? priceBounds.min : 0;
+    let maxBound = Number.isFinite(priceBounds.max)
+      ? priceBounds.max
+      : minBound;
+    if (maxBound <= minBound) {
+      maxBound = minBound + 1;
     }
-    return PRODUCT_DATA.filter(product =>
-      product.title.toLowerCase().includes(term),
-    );
-  }, [searchTerm]);
+    return {min: minBound, max: maxBound};
+  }, [priceBounds]);
+
+  const activeLow = Number.isFinite(pendingPriceRange.min)
+    ? pendingPriceRange.min
+    : sliderBounds.min;
+  const activeHigh = Number.isFinite(pendingPriceRange.max)
+    ? pendingPriceRange.max
+    : sliderBounds.max;
+
+  const sliderSpan = sliderBounds.max - sliderBounds.min;
+  const sliderStep = Math.max(1, Math.round(sliderSpan / 20)) || 1;
+  const sliderMinGap = Math.max(1, Math.round(sliderSpan / 10)) || 1;
+  const hasPriceData = hasProductPrices;
+  const formattedPriceRange = hasPriceData
+    ? `${Math.round(activeLow)}₹ - ${Math.round(activeHigh)}₹`
+    : '--';
+  const categoryItemHeight = 52;
+  const categoryListMaxHeight = Math.max(160, windowHeight * 0.28);
+  const priceSectionHeight = hasPriceData ? 180 : 160;
+  const categoryListHeight = categoryOptions.length * categoryItemHeight;
+  const categorySectionHeight =
+    categoryOptions.length > 0
+      ? Math.min(categoryListHeight, categoryListMaxHeight)
+      : 72;
+  const actionsHeight = 90;
+  const sheetHeight = useMemo(() => {
+    const estimatedHeight =
+      priceSectionHeight + categorySectionHeight + actionsHeight;
+    const maxHeight = windowHeight * 0.6;
+    const minHeight = 260;
+    return Math.min(maxHeight, Math.max(minHeight, estimatedHeight));
+  }, [
+    actionsHeight,
+    categorySectionHeight,
+    priceSectionHeight,
+    windowHeight,
+  ]);
 
   const handleAddToCart = useCallback(product => {
-    console.log('Add to cart tapped:', product?.title);
+    console.log('Add to cart tapped:', product?.name);
   }, []);
+
+  const handleProductPress = useCallback(
+    product => {
+      if (!product) {
+        return;
+      }
+      const productId = product?._id || product?.id;
+      navigation.navigate('ProductDetails', {
+        productId,
+        product,
+      });
+    },
+    [navigation],
+  );
 
   const renderProduct = useCallback(
     ({item}) => (
       <View style={{width: '48%', marginBottom: 18}}>
         <ProductCard
-          image={item.image}
-          title={item.title}
-          price={item.price}
-          rating={item.rating}
-          onPress={() => console.log('Product pressed:', item.title)}
+          image={item?.images?.[0]}
+          title={item?.name}
+          price={item?.sellingPrice ?? item?.mrpPrice}
+          rating={
+            item?.rating ??
+            item?.averageRating ??
+            item?.avgRating ??
+            item?.ratingValue ??
+            4
+          }
+          onPress={() => handleProductPress(item)}
           onAddToCart={() => handleAddToCart(item)}
         />
       </View>
     ),
-    [handleAddToCart],
+    [handleAddToCart, handleProductPress],
   );
 
   return (
@@ -168,7 +432,7 @@ const ProductScreen = () => {
           </Text>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => sheetRef.current?.open()}
+            onPress={handleOpenFilter}
             className="w-10 h-10 items-center justify-center rounded-full border border-[#FF8835] bg-white">
             <ProductFilterIcon size={22} stroke="#FF8835" />
           </TouchableOpacity>
@@ -177,14 +441,42 @@ const ProductScreen = () => {
         <FlatList
           numColumns={2}
           data={filteredProducts}
-          keyExtractor={item => item.id}
+          keyExtractor={(item, index) =>
+            item?._id
+              ? String(item._id)
+              : item?.id
+              ? String(item.id)
+              : `product-${index}`
+          }
           renderItem={renderProduct}
           columnWrapperStyle={{justifyContent: 'space-between'}}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: bottom + 120,
+            paddingTop: filteredProducts.length === 0 ? 40 : 0,
           }}
+          refreshControl={
+            products.length > 0 ? (
+              <RefreshControl
+                refreshing={loading}
+                onRefresh={fetchProducts}
+                tintColor="#FF8835"
+                colors={['#FF8835']}
+              />
+            ) : null
+          }
+          ListEmptyComponent={
+            <View className="items-center justify-center py-20">
+              {loading ? (
+                <ActivityIndicator size="large" color="#FF8835" />
+              ) : (
+                <Text className="text-base font-poppins text-[#64748B]">
+                  {fetchError || 'No products match your filters.'}
+                </Text>
+              )}
+            </View>
+          }
         />
       </View>
 
@@ -193,7 +485,7 @@ const ProductScreen = () => {
         closeOnDragDown
         closeOnPressMask
         dragFromTopOnly
-        height={420}
+        height={sheetHeight}
         customStyles={{
           container: {
             borderTopLeftRadius: 32,
@@ -217,17 +509,17 @@ const ProductScreen = () => {
               Price
               <Text className="font-poppins text-base text-[#1D293D]">
                 {' '}
-                {PRICE_MIN}₹ - {PRICE_MAX}₹
+                {formattedPriceRange}
               </Text>
             </Text>
             <PriceRangeSlider
-              min={0}
-              max={1000}
-              low={range.low}
-              high={range.high}
-              step={10}
-              minRange={50}
-              onValueChange={(l, h) => setRange({low: l, high: h})}
+              min={sliderBounds.min}
+              max={sliderBounds.max}
+              low={activeLow}
+              high={activeHigh}
+              step={sliderStep}
+              minRange={sliderMinGap}
+              onValueChange={handlePriceChange}
             />
           </View>
 
@@ -235,33 +527,46 @@ const ProductScreen = () => {
             Categories
           </Text>
           <View className="mb-6">
-            {CATEGORY_OPTIONS.map(option => {
-              const isSelected = selectedCategories.has(option.id);
-              return (
-                <TouchableOpacity
-                  key={option.id}
-                  activeOpacity={0.8}
-                  onPress={() => toggleCategory(option.id)}
-                  className="mb-3 flex-row items-center">
-                  <View
-                    className={`h-6 w-6 items-center justify-center rounded-md border ${
-                      isSelected
-                        ? 'border-[#FF8A00] bg-[#FF8A00]'
-                        : 'border-[#CBD5E1] bg-white'
-                    }`}>
-                    {isSelected ? (
-                      <Text className="font-poppinsSemiBold text-base text-white">
-                        ✓
+            {categoryOptions.length === 0 ? (
+              <Text className="font-poppins text-[15px] text-[#94A3B8]">
+                No categories available.
+              </Text>
+            ) : (
+              <ScrollView
+                style={{maxHeight: categoryListMaxHeight}}
+                contentContainerStyle={{paddingBottom: 4}}
+                showsVerticalScrollIndicator={false}>
+                {categoryOptions.map(option => {
+                  const isSelected = pendingCategories.has(option.id);
+                  return (
+                    <TouchableOpacity
+                      key={option.id}
+                      activeOpacity={0.8}
+                      onPress={() => toggleCategory(option.id)}
+                      className="mb-3 flex-row items-center">
+                      <View
+                        className={`h-6 w-6 items-center justify-center rounded-md border ${
+                          isSelected
+                            ? 'border-[#FF8A00] bg-[#FF8A00]'
+                            : 'border-[#CBD5E1] bg-white'
+                        }`}>
+                        {isSelected ? (
+                          <Text className="font-poppinsSemiBold text-base text-white">
+                            ✓
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text className="ml-3 font-poppins text-[15px] text-[#1D293D]">
+                        {option.label}{' '}
+                        <Text className="text-[#94A3B8]">
+                          ({option.count ?? 0})
+                        </Text>
                       </Text>
-                    ) : null}
-                  </View>
-                  <Text className="ml-3 font-poppins text-[15px] text-[#1D293D]">
-                    {option.label}{' '}
-                    <Text className="text-[#94A3B8]">({option.count})</Text>
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
           </View>
 
           <View className="flex-row items-center justify-between">

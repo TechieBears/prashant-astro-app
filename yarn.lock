@@ -6581,11 +6581,6 @@ react-native-snap-carousel@^3.9.1:
     prop-types "^15.6.1"
     react-addons-shallow-compare "15.6.2"
 
-react-native-sticky-range-slider@^0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/react-native-sticky-range-slider/-/react-native-sticky-range-slider-0.1.7.tgz#a36d327c2b7bbfcfe4976dffb0d720fe528652d7"
-  integrity sha512-ab7KgwubSJOmelrH6pMg8hWIVlD3IF3hhigVj1nRR5U8tnkNleCN/4aFm8WckHxeaFgfgX9Zrg2L/dNGNjtm2w==
-
 react-native-svg-transformer@^1.5.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/react-native-svg-transformer/-/react-native-svg-transformer-1.5.1.tgz#04467563becbea65b8e576df7e33c9a9a86961e8"
