@@ -9,6 +9,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -28,6 +30,7 @@ import {
   getAvailabilityAstrologers,
   getAvailabilityTimeSlot,
   getCustomerAddresses,
+  addToCartService,
 } from '../../services/api';
 import DualToggleSwitch from '../../components/Toggle/DualToggleSwitch';
 
@@ -43,6 +46,17 @@ const SERVICE_MODE_REQUEST_MAP = {
   consult_online: 'online',
   consult_location: 'pandit_center',
   pooja_home: 'home_pooja',
+};
+
+const showToastMessage = message => {
+  if (!message) {
+    return;
+  }
+  if (Platform.OS === 'android' && ToastAndroid?.show) {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+    return;
+  }
+  Alert.alert('Notice', message);
 };
 
 const formatFullName = (firstName, lastName) =>
@@ -525,6 +539,8 @@ const CheckAvailability = () => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState(false);
   const [customerAddresses, setCustomerAddresses] = useState([]);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState('');
   const [isAddressLoading, setIsAddressLoading] = useState(false);
   const [isAddressPickerVisible, setIsAddressPickerVisible] = useState(false);
 
@@ -706,20 +722,21 @@ const CheckAvailability = () => {
     formState: {isValid},
   } = useForm({
     mode: 'onChange',
-    defaultValues: {
-      serviceType:
-        serviceTypeOptions.length === 1 ? serviceTypeOptions[0].value : '',
-      serviceMode: '',
-      pandit: astrologerOptions.length === 1 ? astrologerOptions[0].value : '',
-      date: moment().format('YYYY-MM-DD'),
-      timeSlot: '',
-      recipient: 'self',
-      fullName: '',
-      phoneNumber: '',
-      email: '',
-      addressId: '',
-    },
-  });
+  defaultValues: {
+    serviceType:
+      serviceTypeOptions.length === 1 ? serviceTypeOptions[0].value : '',
+    serviceMode: '',
+    pandit: astrologerOptions.length === 1 ? astrologerOptions[0].value : '',
+    date: moment().format('YYYY-MM-DD'),
+    timeSlot: '',
+    recipient: 'self',
+    firstName: '',
+    lastName: '',
+    phoneNumber: '',
+    email: '',
+    addressId: '',
+  },
+});
 
   const selectedServiceType = watch('serviceType');
   const selectedMode = watch('serviceMode');
@@ -1046,7 +1063,11 @@ const CheckAvailability = () => {
   }, [selectedDate]);
 
   const onSubmit = useCallback(
-    data => {
+    async data => {
+      if (isBooking) {
+        return;
+      }
+
       const serviceTypeDetail = serviceTypeOptions.find(
         option => option.value === data.serviceType,
       );
@@ -1087,8 +1108,17 @@ const CheckAvailability = () => {
           ) || astrologerDetail?.label
         : '';
 
+      const firstName =
+        typeof data.firstName === 'string' ? data.firstName.trim() : '';
+      const lastName =
+        typeof data.lastName === 'string' ? data.lastName.trim() : '';
+      const composedFullName = formatFullName(firstName, lastName);
+
       const payload = {
         ...data,
+        firstName,
+        lastName,
+        fullName: composedFullName,
         service,
         serviceTypeDetail: serviceTypeDetail?.meta ?? serviceTypeDetail,
         astrologerDetail: astrologerDetail?.meta ?? astrologerDetail,
@@ -1100,9 +1130,127 @@ const CheckAvailability = () => {
         astrologerName,
       };
 
-      console.log('Booking form submission', payload);
-      if (navigation?.navigate) {
-        navigation.navigate('BookingSummary', {bookingDetails: payload});
+      const selectedAstrologerId =
+        astrologerDetail?.meta?._id ??
+        astrologerDetail?._id ??
+        astrologerDetail?.value ??
+        '';
+
+      const serviceIdentifier =
+        service?._id ??
+        service?.id ??
+        serviceTypeDetail?.value ??
+        serviceTypeDetail?.meta?._id ??
+        '';
+
+      const modeForRequest =
+        SERVICE_MODE_REQUEST_MAP[data.serviceMode] ?? data.serviceMode ?? '';
+
+      const extractTime = (rawTime, position) => {
+        if (!rawTime) {
+          return null;
+        }
+        const parts = rawTime.split('-').map(part => part.trim());
+        if (position === 'start') {
+          return parts[0] ?? null;
+        }
+        if (position === 'end') {
+          return parts[1] ?? null;
+        }
+        return null;
+      };
+
+      const slotLabel =
+        timeSlotDetail?.time ??
+        (timeSlotDetail?.display_time && timeSlotDetail?.display_end_time
+          ? `${timeSlotDetail.display_time} - ${timeSlotDetail.display_end_time}`
+          : data.timeSlot);
+
+      const startTime =
+        timeSlotDetail?.display_time ??
+        timeSlotDetail?.raw?.startTime ??
+        timeSlotDetail?.raw?.from ??
+        extractTime(slotLabel, 'start') ??
+        '';
+
+      const endTime =
+        timeSlotDetail?.display_end_time ??
+        timeSlotDetail?.raw?.endTime ??
+        timeSlotDetail?.raw?.to ??
+        extractTime(slotLabel, 'end') ??
+        '';
+
+      const sanitizeId = candidate => {
+        const text =
+          candidate !== undefined && candidate !== null
+            ? String(candidate).trim()
+            : '';
+        return text !== '' ? text : null;
+      };
+
+      const resolvedAddress =
+        sanitizeId(selectedAddress?._id) ??
+        sanitizeId(selectedAddress?.id) ??
+        sanitizeId(data.addressId);
+
+      const bookingPayload = {
+        serviceId: serviceIdentifier,
+        serviceMode: modeForRequest,
+        astrologer: selectedAstrologerId,
+        startTime,
+        endTime,
+        date: data.date,
+        firstName,
+        lastName,
+        email: data.email,
+        phone: data.phoneNumber,
+        address: resolvedAddress,
+      };
+
+      const validations = [
+        {value: bookingPayload.serviceId, message: 'Service ID is missing.'},
+        {value: bookingPayload.serviceMode, message: 'Service mode is missing.'},
+        {value: bookingPayload.astrologer, message: 'Astrologer selection is missing.'},
+        {value: bookingPayload.date, message: 'Booking date is missing.'},
+        {value: bookingPayload.startTime, message: 'Start time is missing.'},
+        {value: bookingPayload.endTime, message: 'End time is missing.'},
+        {value: bookingPayload.firstName, message: 'First name is missing.'},
+        {value: bookingPayload.lastName, message: 'Last name is missing.'},
+        {value: bookingPayload.email, message: 'Email address is missing.'},
+        {value: bookingPayload.phone, message: 'Phone number is missing.'},
+        {value: bookingPayload.address, message: 'Address selection is missing.'},
+      ];
+
+      const missingValidation = validations.find(item => {
+        if (typeof item.value === 'string') {
+          return item.value.trim() === '';
+        }
+        return !item.value;
+      });
+
+      if (missingValidation) {
+        setBookingError('');
+        showToastMessage(missingValidation.message);
+        return;
+      }
+
+      setBookingError('');
+      setIsBooking(true);
+
+      try {
+        const bookingResponse = await addToCartService(bookingPayload);
+        if (navigation?.navigate) {
+          navigation.navigate('BookingSummary', {
+            bookingDetails: payload,
+            bookingResponse,
+            bookingRequest: bookingPayload,
+          });
+        }
+      } catch (error) {
+        console.log('Booking submission failed', error);
+        setBookingError('Unable to complete booking. Please try again.');
+      } finally {
+        setIsBooking(false);
       }
     },
     [
@@ -1114,6 +1262,7 @@ const CheckAvailability = () => {
       timeSlots,
       selectedAddress,
       customerAddresses,
+      isBooking,
     ],
   );
 
@@ -1298,13 +1447,21 @@ const CheckAvailability = () => {
             <View className="mt-3">
               <FormTextField
                 control={control}
-                name="fullName"
-                label="Full Name *"
-                placeholder="Enter full name"
-                rules={{required: 'Full name is required'}}
+                name="firstName"
+                label="First Name *"
+                placeholder="Enter first name"
+                rules={{required: 'First name is required'}}
               />
             </View>
-
+            <View className="mt-3">
+              <FormTextField
+                control={control}
+                name="lastName"
+                label="Last Name *"
+                placeholder="Enter last name"
+                rules={{required: 'Last name is required'}}
+              />
+            </View>
             <FormTextField
               control={control}
               name="phoneNumber"
@@ -1456,11 +1613,16 @@ const CheckAvailability = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? bottom + 20 : 0}>
           <View className="pb-0">
+            {bookingError ? (
+              <Text className="text-primary2 font-poppins text-xs text-center mb-3">
+                {bookingError}
+              </Text>
+            ) : null}
             <GradientButton
-              title="Check Summary"
+              title={isBooking ? 'Processing...' : 'Check Summary'}
               showIcon={false}
               onPress={handleSubmit(onSubmit)}
-              disabled={!isValid}
+              disabled={!isValid || isBooking}
             />
           </View>
         </KeyboardAvoidingView>

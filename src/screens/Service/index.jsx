@@ -108,7 +108,7 @@ const ServiceScreen = ({navigation}) => {
         }}>
         <View className="flex-1">
           <View
-            className="bg-[#F8FAFC] border-t border-b border-[#00000026] mb-"
+            className="bg-[#F8FAFC] border-t border-b border-[#00000026] h-min-[20px]"
             style={{
               shadowColor: 'rgba(0,0,0,0.1)',
               shadowOffset: {width: 6, height: 6},

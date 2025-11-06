@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState, useCallback, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,18 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import moment from 'moment';
 import LinearGradient from 'react-native-linear-gradient';
+import Svg, {Path} from 'react-native-svg';
 import {ArrowLeft02Icon} from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
+import {bookService, getCartData, removeFromCartService} from '../../services/api';
 import {
   SessionDurationIcon,
   BookingDateIcon,
@@ -26,6 +31,16 @@ import {
 
 const DEFAULT_DURATION = '30-60 minutes';
 const DEFAULT_MODE = 'Consult Online';
+const showToastMessage = message => {
+  if (!message) {
+    return;
+  }
+  if (Platform.OS === 'android' && ToastAndroid?.show) {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+    return;
+  }
+  Alert.alert('Notice', message);
+};
 
 const parseAmount = raw => {
   if (typeof raw === 'number' && !Number.isNaN(raw)) {
@@ -132,6 +147,139 @@ const formatAddressLine = address => {
   return `${base} - ${address.postalCode}`;
 };
 
+const splitFullName = fullName => {
+  const trimmed =
+    typeof fullName === 'string'
+      ? fullName.trim().replace(/\s+/g, ' ')
+      : '';
+
+  if (!trimmed) {
+    return {firstName: '', lastName: ''};
+  }
+
+  const parts = trimmed.split(' ');
+  if (parts.length === 1) {
+    return {firstName: parts[0], lastName: ''};
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  };
+};
+
+const normaliseStartTime = value => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (trimmed.includes('-')) {
+    const [startPart] = trimmed.split('-');
+    const candidate = startPart ? startPart.trim() : '';
+    return candidate || '';
+  }
+  return trimmed;
+};
+
+const normaliseEndTime = value => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (trimmed.includes('-')) {
+    const parts = trimmed.split('-');
+    const endPart = parts[1] ? parts[1].trim() : '';
+    return endPart || '';
+  }
+  return trimmed;
+};
+
+const DeleteIcon = ({size = 20, color = '#FF4D4F'}) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M5 6h14"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+    <Path
+      d="M10 10v6"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+    <Path
+      d="M14 10v6"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+    <Path
+      d="M7 6v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    />
+    <Path
+      d="M9 6V4h6v2"
+      stroke={color}
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const formatCartTimeWindow = (startTime, endTime) => {
+  const start = startTime
+    ? moment(startTime, ['HH:mm', 'HH:mm:ss', 'h:mm A'])
+    : null;
+  const end = endTime
+    ? moment(endTime, ['HH:mm', 'HH:mm:ss', 'h:mm A'])
+    : null;
+
+  if (start && start.isValid() && end && end.isValid()) {
+    return `${start.format('HH:mm')} - ${end.format('HH:mm')}`;
+  }
+
+  if (start && start.isValid()) {
+    return start.format('HH:mm');
+  }
+
+  return '';
+};
+
+const formatCartDateTimeLabel = (dateValue, startTime, endTime) => {
+  const dateLabel = dateValue
+    ? moment(dateValue, ['YYYY-MM-DD', moment.ISO_8601]).format('YYYY-MM-DD')
+    : '';
+  const timeWindow = formatCartTimeWindow(startTime, endTime);
+  return [dateLabel, timeWindow].filter(Boolean).join(' / ');
+};
+
+const calculateDurationLabel = (startTime, endTime) => {
+  const start = startTime
+    ? moment(startTime, ['HH:mm', 'HH:mm:ss', 'h:mm A'])
+    : null;
+  const end = endTime
+    ? moment(endTime, ['HH:mm', 'HH:mm:ss', 'h:mm A'])
+    : null;
+
+  if (start && start.isValid() && end && end.isValid()) {
+    const diff = end.diff(start, 'minutes');
+    if (Number.isFinite(diff) && diff > 0) {
+      return `${diff} mins`;
+    }
+  }
+  return '';
+};
+
 const InfoRow = ({icon, label, value}) => {
   if (!value) {
     return null;
@@ -160,11 +308,72 @@ const BookingSummary = () => {
   const route = useRoute();
   const {top, bottom} = useSafeAreaInsets();
 
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [cartItems, setCartItems] = useState([]);
+  const [cartGrandTotal, setCartGrandTotal] = useState(null);
+  const [isCartLoading, setIsCartLoading] = useState(false);
+  const [cartError, setCartError] = useState('');
+  const [cartActionLoading, setCartActionLoading] = useState(false);
+
   const bookingDetails = route.params?.bookingDetails ?? {};
+  const bookingResponse = route.params?.bookingResponse ?? {};
+  const bookingRequest = route.params?.bookingRequest ?? {};
   const service = bookingDetails.service ?? {};
   const addressDetail = bookingDetails?.addressDetail ?? null;
+  const bookingFullName = formatFullName(
+    bookingDetails?.firstName,
+    bookingDetails?.lastName,
+  ) || bookingDetails?.fullName || '';
+
+  console.log("cartItem:", cartItems);
+  
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsCartLoading(true);
+    setCartError('');
+    getCartData()
+      .then(response => {
+        if (!isMounted) {
+          return;
+        }
+        console.log("response: ", response);
+        
+        const payload = response?.data ?? {};
+        const items = Array.isArray(payload?.items) ? payload.items : [];
+        setCartItems(items);
+        setCartGrandTotal(
+          payload?.grandtotal != null ? Number(payload.grandtotal) : null,
+        );
+      })
+      .catch(error => {
+        console.log('Failed to fetch cart data', error);
+        if (isMounted) {
+          setCartError('Unable to load cart details. Please try again.');
+          setCartItems([]);
+          setCartGrandTotal(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsCartLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const responseItems = cartItems.length > 0
+    ? cartItems
+    : Array.isArray(bookingResponse?.items)
+    ? bookingResponse.items
+    : [];
 
   const serviceTypeName =
+    responseItems[responseItems.length - 1]?.name ??
     bookingDetails?.serviceTypeDetail?.name ??
     bookingDetails?.serviceTypeDetail?.label ??
     bookingDetails?.serviceTypeLabel ??
@@ -198,6 +407,39 @@ const BookingSummary = () => {
     .filter(Boolean)
     .join(' / ');
 
+  const bookedServiceItem = useMemo(() => {
+    if (responseItems.length === 0) {
+      return null;
+    }
+
+    const normalise = value => {
+      if (value === undefined || value === null) {
+        return '';
+      }
+      return String(value).trim();
+    };
+
+    const candidateIds = [
+      bookingRequest?.serviceId,
+      service?._id ?? service?.id,
+      bookingDetails?.serviceTypeDetail?._id ??
+        bookingDetails?.serviceTypeDetail?.id,
+    ]
+      .map(normalise)
+      .filter(Boolean);
+
+    if (candidateIds.length > 0) {
+      const foundItem = responseItems.find(item =>
+        candidateIds.includes(normalise(item?.serviceId)),
+      );
+      if (foundItem) {
+        return foundItem;
+      }
+    }
+
+    return responseItems[responseItems.length - 1] ?? null;
+  }, [bookingRequest?.serviceId, bookingDetails?.serviceTypeDetail, responseItems, service?._id, service?.id]);
+
   const meetingLink =
     bookingDetails?.meetingLink ??
     bookingDetails?.modeDetail?.meetingUrl ??
@@ -205,50 +447,386 @@ const BookingSummary = () => {
     bookingDetails?.astrologerDetail?.meetingUrl ??
     '';
 
+  const cartDisplayItems = useMemo(() => {
+    return responseItems.map((item, index) => {
+      const durationLabel =
+        calculateDurationLabel(item?.startTime, item?.endTime) ||
+        bookingDetails?.service?.sessionDuration ||
+        bookingDetails?.sessionDuration ||
+        '';
+
+      const modeLabel =
+        item?.serviceMode ??
+        bookingDetails?.modeDetail?.label ??
+        bookingDetails?.serviceModeLabel ??
+        '';
+
+      const astrologerName =
+        item?.astrologer?.fullName ??
+        bookingDetails?.astrologerName ??
+        bookingDetails?.astrologerDetail?.name ??
+        bookingDetails?.astrologerDetail?.label ??
+        '';
+
+      return {
+        key: item?._id ?? `${index}`,
+        name: item?.name ?? service?.title ?? 'Service',
+        durationLabel,
+        dateTimeLabel: formatCartDateTimeLabel(
+          item?.date,
+          item?.startTime,
+          item?.endTime,
+        ),
+        modeLabel,
+        astrologerName,
+        raw: item,
+      };
+    });
+  }, [
+    bookingDetails?.astrologerDetail,
+    bookingDetails?.astrologerName,
+    bookingDetails?.modeDetail?.label,
+    bookingDetails?.service,
+    bookingDetails?.serviceModeLabel,
+    bookingDetails?.sessionDuration,
+    responseItems,
+    service?.title,
+  ]);
+
   const serviceFee = useMemo(() => {
+    if (responseItems.length > 0) {
+      const sum = responseItems.reduce((acc, item) => {
+        const amount =
+          parseAmount(item?.totalPrice) ??
+          parseAmount(item?.originalPrice);
+        return acc + (amount ?? 0);
+      }, 0);
+      if (sum > 0) {
+        return Number(sum.toFixed(2));
+      }
+    }
     const primary =
+      parseAmount(bookedServiceItem?.totalPrice) ??
+      parseAmount(bookedServiceItem?.originalPrice) ??
       parseAmount(service?.price) ??
       parseAmount(service?.amount) ??
       parseAmount(bookingDetails?.serviceFee);
-    return primary ?? 5999;
-  }, [bookingDetails?.serviceFee, service?.amount, service?.price]);
+    return primary ?? 0;
+  }, [
+    bookedServiceItem?.originalPrice,
+    bookedServiceItem?.totalPrice,
+    bookingDetails?.serviceFee,
+    responseItems,
+    service?.amount,
+    service?.price,
+  ]);
 
   const gstRate = bookingDetails?.gstRate ?? 0.18;
+  const responseGrandTotal = useMemo(() => {
+    if (cartGrandTotal != null) {
+      return Number(cartGrandTotal);
+    }
+    return parseAmount(
+      bookingResponse?.grandtotal ?? bookingResponse?.grandTotal,
+    );
+  }, [cartGrandTotal, bookingResponse?.grandTotal, bookingResponse?.grandtotal]);
+
   const gstAmount = useMemo(() => {
+    if (responseGrandTotal !== null) {
+      const diff = Number((responseGrandTotal - serviceFee).toFixed(2));
+      return diff > 0 ? diff : 0;
+    }
     return Number((serviceFee * gstRate).toFixed(2));
-  }, [gstRate, serviceFee]);
+  }, [gstRate, responseGrandTotal, serviceFee]);
+
   const totalAmount = useMemo(() => {
+    if (responseGrandTotal !== null) {
+      return responseGrandTotal;
+    }
     return Number((serviceFee + gstAmount).toFixed(2));
-  }, [serviceFee, gstAmount]);
+  }, [gstAmount, responseGrandTotal, serviceFee]);
 
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const handleContinue = () => {
-    navigation.navigate('BookingSuccess', {bookingDetails});
-  };
+  const handleRemoveItem = useCallback(
+    async itemId => {
+      const trimmedId =
+        typeof itemId === 'string' ? itemId.trim() : String(itemId || '');
+      if (!trimmedId) {
+        showToastMessage('Unable to identify cart item.');
+        return;
+      }
+      if (cartActionLoading) {
+        return;
+      }
+
+      setCartActionLoading(true);
+      try {
+        const removalResponse = await removeFromCartService({itemId: trimmedId});
+        setCartError('');
+        const updatedPayload = removalResponse?.data ?? removalResponse ?? {};
+        const updatedItems = Array.isArray(updatedPayload?.items)
+          ? updatedPayload.items
+          : [];
+        if (updatedItems.length > 0) {
+          setCartItems(updatedItems);
+          setCartGrandTotal(
+            updatedPayload?.grandtotal != null
+              ? Number(updatedPayload.grandtotal)
+              : cartGrandTotal,
+          );
+        } else {
+          setCartItems(prev => prev.filter(item => item?._id !== trimmedId));
+          if (updatedPayload?.grandtotal != null) {
+            setCartGrandTotal(Number(updatedPayload.grandtotal));
+          }
+        }
+        showToastMessage('Item removed from cart.');
+      } catch (error) {
+        console.log('Failed to remove cart item', error);
+        showToastMessage('Unable to remove item. Please try again.');
+      } finally {
+        setCartActionLoading(false);
+      }
+    },
+    [cartActionLoading, cartGrandTotal],
+  );
+
+  const handleContinue = useCallback(async () => {
+    if (isPlacingOrder) {
+      return;
+    }
+    console.log("cartData : ");
+    
+
+    const sanitize = value =>
+      value !== undefined && value !== null ? String(value).trim() : '';
+
+    const firstCartItem = responseItems.length > 0 ? responseItems[0] : null;
+    const namesFromFullName = splitFullName(bookingDetails?.fullName);
+    const fallbackFirstName =
+      sanitize(bookingRequest?.firstName) ||
+      sanitize(bookingDetails?.firstName) ||
+      sanitize(firstCartItem?.cust?.firstName) ||
+      sanitize(namesFromFullName.firstName);
+    const fallbackLastName =
+      sanitize(bookingRequest?.lastName) ||
+      sanitize(bookingDetails?.lastName) ||
+      sanitize(firstCartItem?.cust?.lastName) ||
+      sanitize(namesFromFullName.lastName);
+    const fallbackEmail =
+      sanitize(bookingDetails?.email) ||
+      sanitize(bookingRequest?.email) ||
+      sanitize(firstCartItem?.cust?.email);
+    const fallbackPhone =
+      sanitize(bookingDetails?.phoneNumber) ||
+      sanitize(bookingRequest?.phone) ||
+      sanitize(firstCartItem?.cust?.phone);
+    const fallbackAddress =
+      sanitize(bookingRequest?.address) ||
+      (bookingDetails?.addressDetail?._id != null
+        ? sanitize(bookingDetails.addressDetail._id)
+        : '') ||
+      sanitize(firstCartItem?.address);
+    const fallbackServiceId =
+      sanitize(bookingRequest?.serviceId) ||
+      sanitize(bookedServiceItem?.serviceId) ||
+      sanitize(firstCartItem?.serviceId ?? firstCartItem?.service);
+    const fallbackServiceType =
+      sanitize(bookingRequest?.serviceMode) ||
+      sanitize(bookedServiceItem?.serviceMode) ||
+      sanitize(firstCartItem?.serviceMode);
+    const fallbackAstrologer =
+      sanitize(bookingRequest?.astrologer) ||
+      sanitize(bookedServiceItem?.astrologer?._id) ||
+      sanitize(firstCartItem?.astrologer?._id ?? firstCartItem?.astrologer);
+    const fallbackDate =
+      sanitize(bookingRequest?.date) ||
+      sanitize(bookingDetails?.date) ||
+      sanitize(firstCartItem?.date);
+    const fallbackStartTime = normaliseStartTime(
+      bookingRequest?.startTime ??
+        bookingDetails?.timeSlotDetail?.display_time ??
+        bookingDetails?.timeSlot ??
+        firstCartItem?.startTime ??
+        '',
+    );
+    const fallbackEndTime = normaliseEndTime(
+      bookingRequest?.endTime ??
+        bookingDetails?.timeSlotDetail?.display_end_time ??
+        bookingDetails?.timeSlotDetail?.service_end_time ??
+        bookingDetails?.timeSlot ??
+        firstCartItem?.endTime ??
+        '',
+    );
+    const fallbackBookingType =
+      sanitize(bookingRequest?.bookingType) ||
+      sanitize(firstCartItem?.bookingType) ||
+      fallbackServiceType;
+
+    const paymentType = 'UPI' ||
+      sanitize(bookingDetails?.paymentType) ||
+      sanitize(bookingRequest?.paymentType) ||
+      sanitize(firstCartItem?.paymentType) ||
+      sanitize(firstCartItem?.serviceMode);
+    let paymentId =
+      sanitize(bookingDetails?.paymentId) ||
+      sanitize(bookingRequest?.paymentId) ||
+      sanitize(firstCartItem?.paymentId);
+    if (!paymentId) {
+      paymentId = `COD-${moment().format('YYYYMMDDHHmmss')}`;
+    }
+    const paymentNote = 'Cash will be collected at time of service';
+
+    const normalizedServiceItems =
+      responseItems.length > 0
+        ? responseItems.map(item => {
+            const customer = item?.cust ?? {};
+            return {
+      serviceId:
+        sanitize(item?.serviceId ?? item?.service) || fallbackServiceId,
+      serviceType:
+        sanitize(item?.serviceMode) || fallbackServiceType,
+      astrologerId:
+        sanitize(item?.astrologer?._id ?? item?.astrologer) ||
+        fallbackAstrologer,
+              bookingDate: sanitize(item?.date) || fallbackDate,
+              startTime: normaliseStartTime(
+                item?.startTime ?? fallbackStartTime,
+              ),
+              endTime: normaliseEndTime(item?.endTime ?? fallbackEndTime),
+              firstName:
+                sanitize(customer?.firstName) || fallbackFirstName,
+              lastName: sanitize(customer?.lastName) || fallbackLastName,
+              email: sanitize(customer?.email) || fallbackEmail,
+              phone: sanitize(customer?.phone) || fallbackPhone,
+              address: sanitize(item?.address) || fallbackAddress,
+              bookingType:
+                sanitize(item?.bookingType ?? item?.serviceMode) ||
+                fallbackBookingType,
+              quantity:
+                Number(item?.quantity) > 0 ? Number(item.quantity) : 1,
+            };
+          })
+        : [
+            {
+              serviceId: fallbackServiceId,
+              serviceType: fallbackServiceType,
+              astrologerId: fallbackAstrologer,
+              bookingDate: fallbackDate,
+              startTime: fallbackStartTime,
+              endTime: fallbackEndTime,
+              firstName: fallbackFirstName,
+              lastName: fallbackLastName,
+              email: fallbackEmail,
+              phone: fallbackPhone,
+              address: fallbackAddress,
+              bookingType: fallbackBookingType,
+              quantity: 1,
+            },
+          ];
+
+    const validations = [
+      {value: paymentType, message: 'Payment type is missing.'},
+      {value: paymentId, message: 'Payment ID is missing.'},
+      {value: paymentNote, message: 'Payment note is missing.'},
+    ];
+
+    const missingValidation = validations.find(item => item.value === '');
+    if (missingValidation) {
+      setOrderError('');
+      showToastMessage(missingValidation.message);
+      return;
+    }
+
+    const hasInvalidService = normalizedServiceItems.some(item => {
+      return (
+        !item.serviceId ||
+        !item.serviceType ||
+        !item.astrologerId ||
+        !item.bookingDate ||
+        !item.startTime ||
+        !item.endTime ||
+        !item.firstName ||
+        !item.lastName ||
+        !item.email ||
+        !item.phone ||
+        !item.address ||
+        !item.bookingType
+      );
+    });
+
+    if (hasInvalidService) {
+      setOrderError('');
+      showToastMessage(
+        'Cart item details are incomplete. Please review your selections.',
+      );
+      return;
+    }
+
+    const serviceItems = normalizedServiceItems;
+
+    const orderPayload = {
+      paymentType,
+      paymentId,
+      paymentDetails: {
+        note: paymentNote,
+      },
+      serviceItems,
+    };
+
+    setOrderError('');
+    setIsPlacingOrder(true);
+    console.log("KLKLKL : ", orderPayload);
+    
+
+    try {
+      const orderResponse = await bookService(orderPayload);
+      console.log("order",orderResponse);
+      
+      navigation.navigate('BookingSuccess', {
+        bookingDetails,
+        bookingResponse,
+        bookingRequest,
+        bookedServiceItem,
+        pricingSummary: {
+          serviceFee,
+          gstAmount,
+          totalAmount,
+        },
+        orderResponse,
+        orderRequest: orderPayload,
+      });
+    } catch (error) {
+      console.log('Order placement failed', error);
+      const apiMessage =
+        error?.response?.data?.message ??
+        error?.response?.data?.error ??
+        error?.message;
+      setOrderError(apiMessage);
+      showToastMessage(apiMessage);
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  }, [
+    bookedServiceItem,
+    bookingDetails,
+    bookingRequest,
+    bookingResponse,
+    gstAmount,
+    isPlacingOrder,
+    navigation,
+    responseItems,
+    serviceFee,
+    totalAmount,
+  ]);
 
   const userDetails = [
     {
       label: 'Name',
-      value: bookingDetails?.fullName,
-      icon: <UserCircleIcon size={21} stroke="#1D293D" />,
-    },
-    {
-      label: 'Booking For',
-      value:
-        bookingDetails?.recipient === 'others'
-          ? 'Someone else'
-          : 'Self',
-      icon: <UserCircleIcon size={21} stroke="#1D293D" />,
-    },
-    {
-      label: 'Astrologer',
-      value:
-        bookingDetails?.astrologerName ??
-        bookingDetails?.astrologerDetail?.name ??
-        bookingDetails?.astrologerDetail?.label,
+      value: bookingFullName,
       icon: <UserCircleIcon size={21} stroke="#1D293D" />,
     },
     {
@@ -310,37 +888,100 @@ const BookingSummary = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{paddingBottom: bottom + 24}}>
           <View className="px-5">
-            <View
-              className="bg-white rounded-[10px] px-5 py-[22px]"
-              style={styles.cardShadow}>
-              <Text className="font-poppinsSemiBold text-[18px] text-[#1D293D] mb-4">
-                Service Type:{' '}
-                <Text className="text-[#FF8835]">{serviceTypeName}</Text>
-              </Text>
+            <View>
+              {isCartLoading ? (
+                <Text className="font-poppins text-sm text-[#64748B] mb-4">
+                  Loading cart items...
+                </Text>
+              ) : null}
+              {cartError ? (
+                <Text className="font-poppins text-sm text-primary2 mb-4">
+                  {cartError}
+                </Text>
+              ) : null}
 
-              <InfoRow
-                icon={<SessionDurationIcon size={24} stroke="#1D293D" />}
-                label="Session Duration"
-                value={sessionDuration}
-              />
-              <InfoRow
-                icon={<BookingDateIcon size={24} stroke="#1D293D" />}
-                label="Date"
-                value={dateTimeLabel}
-              />
-              <InfoRow
-                icon={<SessionModeIcon size={24} stroke="#1D293D" />}
-                label="Mode"
-                value={modeLabel}
-              />
-              <InfoRow
-                icon={<ZoomMeetingIcon size={24} stroke="#1D293D" />}
-                label="zoommtg"
-                value={meetingLink || 'Not provided'}
-              />
+              {cartDisplayItems.length > 0 ? (
+                cartDisplayItems.map(item => (
+                  <View
+                    key={item.key}
+                    className="bg-[#FFFFFF] rounded-[14px] px-5 py-5 mb-4"
+                    style={styles.cartCardShadow}>
+                    <View className="flex-row items-start justify-between mb-3">
+                      <Text className="font-poppinsSemiBold text-[16px] text-[#1D293D]">
+                        Service Type:{' '}
+                        <Text className="text-[#FF8835]">{item.name}</Text>
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveItem(item.raw?._id ?? item.key)}
+                        activeOpacity={cartActionLoading ? 1 : 0.7}
+                        disabled={cartActionLoading}>
+                        <DeleteIcon
+                          size={20}
+                          color={cartActionLoading ? '#CBD5E1' : '#FF4D4F'}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    <InfoRow
+                      icon={<SessionDurationIcon size={22} stroke="#1D293D" />}
+                      label="Session"
+                      value={item.durationLabel}
+                    />
+                    <InfoRow
+                      icon={<BookingDateIcon size={22} stroke="#1D293D" />}
+                      label="Date"
+                      value={item.dateTimeLabel}
+                    />
+                    <InfoRow
+                      icon={<SessionModeIcon size={22} stroke="#1D293D" />}
+                      label="Mode"
+                      value={item.modeLabel}
+                    />
+                    <InfoRow
+                      icon={<UserCircleIcon size={22} stroke="#1D293D" />}
+                      label="Astrologer"
+                      value={
+                        item.astrologerName
+                          ? `${item.astrologerName} (Astrologer)`
+                          : ''
+                      }
+                    />
+                  </View>
+                ))
+              ) : (
+                <View
+                  className="bg-white rounded-[10px] px-5 py-[22px]"
+                  style={styles.cardShadow}>
+                  <Text className="font-poppinsSemiBold text-[18px] text-[#1D293D] mb-4">
+                    Service Type:{' '}
+                    <Text className="text-[#FF8835]">{serviceTypeName}</Text>
+                  </Text>
+
+                  <InfoRow
+                    icon={<SessionDurationIcon size={24} stroke="#1D293D" />}
+                    label="Session Duration"
+                    value={sessionDuration}
+                  />
+                  <InfoRow
+                    icon={<BookingDateIcon size={24} stroke="#1D293D" />}
+                    label="Date"
+                    value={dateTimeLabel}
+                  />
+                  <InfoRow
+                    icon={<SessionModeIcon size={24} stroke="#1D293D" />}
+                    label="Mode"
+                    value={modeLabel}
+                  />
+                  <InfoRow
+                    icon={<ZoomMeetingIcon size={24} stroke="#1D293D" />}
+                    label="zoommtg"
+                    value={meetingLink || 'Not provided'}
+                  />
+                </View>
+              )}
             </View>
 
-            <View className="mt-5">
+            <View className="mt-2">
               <Text className="font-poppinsSemiBold text-[16px] text-[#1D293D] mb-3">
                 User Details:
               </Text>
@@ -440,10 +1081,16 @@ const BookingSummary = () => {
           </View>
         </View>
         <GradientButton
-          title="Continue to Pay"
+          title={isPlacingOrder ? 'Processing...' : 'Continue to Pay'}
           onPress={handleContinue}
           showIcon={false}
+          disabled={isPlacingOrder}
         />
+        {orderError ? (
+          <Text className="text-primary2 font-poppins text-xs text-center mt-3">
+            {orderError}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -463,6 +1110,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 4},
     elevation: 2,
+  },
+  cartCardShadow: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 3,
   },
 });
 

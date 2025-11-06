@@ -136,7 +136,47 @@ export const getAvailabilityTimeSlot = async (slotData) => {
 
 export const getCustomerAddresses = async () => {
   try {
-    const response = await apiClient.get("customer-address/get-all");
+    const response = await apiClient.get("/customer-address/get-all");
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const getCartData = async () => {
+  try {
+    const response = await apiClient.get("/service-cart/public/get");
+    return response.data;
+  } catch (error) {
+    console.log('Get cart data error:', error);
+    throw error;
+  }
+};
+
+export const addToCartService = async (cartBookingPayload) => {
+  try {
+    const response = await apiClient.post("/service-cart/public/add", cartBookingPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const removeFromCartService = async (itemPayload) => {
+  try {
+    const response = await apiClient.put("/service-cart/public/remove-item", itemPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get service categories error:', error);
+    throw error;
+  }
+};
+
+export const bookService = async (bookingPayload) => {
+  try {
+    const response = await apiClient.post("/service-order/public/create", bookingPayload);
     return response.data;
   } catch (error) {
     console.log('Get service categories error:', error);

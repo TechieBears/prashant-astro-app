@@ -1,44 +1,174 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View, Text, StatusBar, ScrollView, TouchableOpacity} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, CommonActions} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import GradientButton from '../../components/Buttons/GradientButton';
 import {BookingSuccessBadgeIcon, ClipboardCopyIcon} from '../../utils/svgIcons';
+import moment from 'moment';
 
-const paymentSummary = [
-  {
-    label: 'Transaction ID',
-    value: '4587569851522',
-    showCopy: true,
-  },
-  {
-    label: 'Booked On',
-    value: '10th Sep, 2025',
-  },
-  {
-    label: 'Booked Date',
-    value: '15th Sep, 2025',
-  },
-  {
-    label: 'Type of Transaction',
-    value: 'Razorpay',
-  },
-  {
-    label: 'Total Price',
-    value: '5999.00',
-  },
-  {
-    label: 'GST',
-    value: '1079.82',
-  },
-];
+const formatCurrency = amount => {
+  const numeric = Number(amount ?? 0);
+  if (Number.isNaN(numeric)) {
+    return '0.00';
+  }
+
+  const hasIntlFormatter =
+    typeof Intl !== 'undefined' &&
+    Intl.NumberFormat &&
+    typeof Intl.NumberFormat === 'function';
+
+  if (hasIntlFormatter) {
+    return new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numeric);
+  }
+
+  return numeric.toFixed(2);
+};
 
 const BookingSuccess = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const {top, bottom} = useSafeAreaInsets();
+  const bookingDetails = route.params?.bookingDetails ?? {};
+  const bookingResponse = route.params?.bookingResponse ?? {};
+  const bookedServiceItem = route.params?.bookedServiceItem ?? null;
+  const pricingSummary = route.params?.pricingSummary ?? {};
+  const orderResponse = route.params?.orderResponse ?? {};
+  const orderRequest = route.params?.orderRequest ?? {};
+
+  const orderDetails = orderResponse?.order ?? {};
+  const orderServices = Array.isArray(orderDetails?.services)
+    ? orderDetails.services
+    : [];
+  const primaryOrderService =
+    orderServices.length > 0
+      ? orderServices[orderServices.length - 1]
+      : null;
+
+  const transactionId =
+    orderDetails?._id ??
+    bookingResponse?.transactionId ??
+    bookingResponse?.paymentId ??
+    bookingResponse?.referenceId ??
+    '';
+
+  const totalPaidAmount =
+    orderDetails?.payingAmount ??
+    orderDetails?.finalAmount ??
+    orderDetails?.totalAmount ??
+    pricingSummary?.totalAmount ??
+    bookingResponse?.grandtotal ??
+    bookingResponse?.grandTotal ??
+    0;
+
+  const bookingCreatedOn = orderDetails?.createdAt
+    ? moment(orderDetails.createdAt).format('Do MMM, YYYY')
+    : bookingResponse?.createdAt
+    ? moment(bookingResponse.createdAt).format('Do MMM, YYYY')
+    : moment().format('Do MMM, YYYY');
+
+  const bookedServiceDate = primaryOrderService?.bookingDate
+    ? moment(primaryOrderService.bookingDate, 'YYYY-MM-DD').format(
+        'Do MMM, YYYY',
+      )
+    : bookingDetails?.date
+    ? moment(bookingDetails.date, 'YYYY-MM-DD').format('Do MMM, YYYY')
+    : moment().format('Do MMM, YYYY');
+
+  const paymentMethod =
+    orderRequest?.paymentType ??
+    orderDetails?.paymentMethod ??
+    bookingResponse?.paymentGateway ??
+    bookingResponse?.paymentMethod ??
+    'Razorpay';
+
+  const paymentStatus =
+    primaryOrderService?.paymentStatus ??
+    orderDetails?.paymentStatus ??
+    'pending';
+
+  const paymentStatusLabel =
+    typeof paymentStatus === 'string' && paymentStatus.trim()
+      ? paymentStatus.trim().charAt(0).toUpperCase() +
+        paymentStatus.trim().slice(1)
+      : 'Pending';
+
+  const totalPriceAmount =
+    primaryOrderService?.total ??
+    pricingSummary?.serviceFee ??
+    bookedServiceItem?.originalPrice ??
+    bookedServiceItem?.totalPrice ??
+    0;
+
+  const gstAmount =
+    (() => {
+      const numericTotal = Number(totalPaidAmount);
+      const numericService = Number(totalPriceAmount);
+      if (
+        !Number.isNaN(numericTotal) &&
+        !Number.isNaN(numericService) &&
+        numericTotal > numericService
+      ) {
+        return Number((numericTotal - numericService).toFixed(2));
+      }
+      return pricingSummary?.gstAmount ?? 0;
+    })() ?? 0;
+
+  const summaryItems = useMemo(
+    () => [
+      {
+        label: 'Transaction ID',
+        value: transactionId || 'N/A',
+        showCopy: Boolean(transactionId),
+      },
+      {
+        label: 'Booked On',
+        value: bookingCreatedOn,
+      },
+      {
+        label: 'Booked Date',
+        value: bookedServiceDate,
+      },
+      {
+        label: 'Payment Status',
+        value: paymentStatusLabel,
+      },
+      {
+        label: 'Type of Transaction',
+        value: paymentMethod,
+      },
+      {
+        label: 'Total Price',
+        value: `₹${formatCurrency(totalPriceAmount)}`,
+      },
+      {
+        label: 'GST',
+        value: `₹${formatCurrency(gstAmount)}`,
+      },
+    ],
+    [
+      bookingCreatedOn,
+      bookedServiceDate,
+      gstAmount,
+      paymentMethod,
+      paymentStatusLabel,
+      totalPriceAmount,
+      transactionId,
+    ],
+  );
 
   const handleGoHome = () => {
-    navigation.navigate('Home');
+    if (!navigation?.dispatch) {
+      return;
+    }
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{name: 'MainTabs'}],
+      }),
+    );
   };
 
   return (
@@ -55,15 +185,20 @@ const BookingSuccess = () => {
             Booking Successful!
           </Text>
           <Text className="text-white/80 font-poppins text-base mt-2 text-center">
-            Successfully paid ₹7078.82
+            Successfully paid ₹{formatCurrency(totalPaidAmount)}
           </Text>
+          {orderResponse?.message ? (
+            <Text className="text-white/70 font-poppins text-sm mt-2 text-center px-6">
+              {orderResponse.message}
+            </Text>
+          ) : null}
         </View>
       </View>
 
       <ScrollView style={{flex: 1}} showsVerticalScrollIndicator={false}>
         <View className="px-3">
           <View>
-            {paymentSummary.map(item => (
+            {summaryItems.map(item => (
               <View
                 key={item.label}
                 className="flex-row items-center justify-between py-2">
@@ -91,7 +226,7 @@ const BookingSuccess = () => {
                 Total Paid
               </Text>
               <Text className="text-[#1D293D] font-poppinsBold text-base mt-1">
-                7078.82
+                ₹{formatCurrency(totalPaidAmount)}
               </Text>
             </View>
           </View>
