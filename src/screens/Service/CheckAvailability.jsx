@@ -19,6 +19,7 @@ import moment from 'moment';
 import {ArrowLeft02Icon} from 'hugeicons-react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import GradientButton from '../../components/Buttons/GradientButton';
+import AddressCard from '../../components/AddressCard';
 import {
   CalendarPillIcon,
   NavArrowLeftIcon,
@@ -1495,33 +1496,22 @@ const CheckAvailability = () => {
             />
 
             <View className="">
-              <Text className="text-[#1D293D] font-poppinsMedium text-sm mb-3">
-                Address
-              </Text>
               {isAddressLoading ? (
-                <Text className="text-[#94A3B8] font-poppins text-xs">
-                  Loading addresses...
-                </Text>
+                <AddressCard
+                  label="Address"
+                  address={null}
+                  emptyHint="Loading addresses..."
+                />
               ) : hasAddresses && selectedAddress ? (
                 <>
-                  <View className="flex-row items-start justify-between rounded-3xl border border-[#EFF3F9] bg-[#F9FAFB] px-5 py-4">
-                    <View className="flex-1 pr-4">
-                      <Text className="font-poppinsSemiBold text-base text-[#1D293D]">
-                        {selectedAddressName}
-                      </Text>
-                      {selectedAddress?.phoneNumber ? (
-                        <Text className="mt-1 font-poppins text-sm text-[#475569]">
-                          {selectedAddress.phoneNumber}
-                        </Text>
-                      ) : null}
-                      <Text className="mt-1 font-poppins text-sm leading-5 text-[#475569]">
-                        {formatAddressLine(selectedAddress)}
-                      </Text>
-                    </View>
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-[#1D293D] font-poppinsMedium text-sm">
+                      Address
+                    </Text>
                     {hasMultipleAddresses ? (
                       <TouchableOpacity
                         onPress={handleToggleAddressPicker}
-                        className="mt-1"
+                        className="px-4 py-2 rounded-[16px] border border-[#FF7A00] bg-white"
                         activeOpacity={0.7}>
                         <Text className="font-poppinsMedium text-sm text-[#FF7A00]">
                           Change
@@ -1529,6 +1519,7 @@ const CheckAvailability = () => {
                       </TouchableOpacity>
                     ) : null}
                   </View>
+                  <AddressCard label={null} address={selectedAddress} />
 
                   {isAddressPickerVisible ? (
                     <View
@@ -1595,14 +1586,12 @@ const CheckAvailability = () => {
                   ) : null}
                 </>
               ) : (
-                <TouchableOpacity
+                <AddressCard
+                  label="Address"
+                  address={null}
+                  emptyHint="+ Add New Address"
                   onPress={handleAddNewAddress}
-                  activeOpacity={0.85}
-                  className="rounded-3xl border border-dashed border-[#FF7A00] px-5 py-4">
-                  <Text className="text-center font-poppins text-sm text-[#FF7A00]">
-                    + Add New Address
-                  </Text>
-                </TouchableOpacity>
+                />
               )}
             </View>
           </View>

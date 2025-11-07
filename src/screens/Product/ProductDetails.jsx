@@ -12,13 +12,16 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Alert,
+  Platform,
+  ToastAndroid,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import GradientButton from '../../components/Buttons/GradientButton';
 import ProductCard from '../../components/Cards/Product';
-import {getProductDetails} from '../../services';
+import {getProductDetails, addToCartProduct} from '../../services';
 import {
   ProductCategoryIcon,
   ProductTagIcon,
@@ -41,6 +44,17 @@ const formatCurrency = value => {
   })}`;
 };
 
+const showToastMessage = message => {
+  if (!message) {
+    return;
+  }
+  if (Platform.OS === 'android' && ToastAndroid?.show) {
+    ToastAndroid.show(message, ToastAndroid.SHORT);
+    return;
+  }
+  Alert.alert('Notice', message);
+};
+
 const ProductDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -53,6 +67,7 @@ const ProductDetails = () => {
   const [isLoading, setIsLoading] = useState(!initialProduct);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
     setQuantity(1);
@@ -151,13 +166,62 @@ const ProductDetails = () => {
     [navigation],
   );
 
-  const handleAddToCart = useCallback(() => {
-    console.log('Add to cart', product?.name, quantity);
-  }, [product?.name, quantity]);
+  const handleAddToCart = useCallback(async () => {
+    if (!product?._id && !product?.id) {
+      return;
+    }
+    try {
+      setIsAddingToCart(true);
+      const payload = {
+        productId: product?._id ?? product?.id,
+        quantity,
+      };
+      await addToCartProduct(payload);
+      navigation.navigate('ProductSummary', {
+        source: 'productDetails',
+      });
+    } catch (error) {
+      console.log('Add to cart error:', error);
+      const defaultMessage =
+        'Unable to add this product to your cart right now.';
+      const apiMessage =
+        error?.response?.data?.message ??
+        error?.message ??
+        defaultMessage;
+      if (apiMessage?.toLowerCase?.().includes('token expired')) {
+        showToastMessage('Token expired, please login again.');
+      } else {
+        showToastMessage(apiMessage ?? defaultMessage);
+      }
+    } finally {
+      setIsAddingToCart(false);
+    }
+  }, [navigation, product?._id, product?.id, quantity]);
 
   const handleBuyNow = useCallback(() => {
-    console.log('Buy now', product?.name, quantity);
-  }, [product?.name, quantity]);
+    if (!product) {
+      return;
+    }
+    const productId = product?._id ?? product?.id;
+    navigation.navigate('ProductSummary', {
+      buyNowItem: {
+        _id: productId,
+        productId,
+        name: product?.name,
+        quantity,
+        price:
+          product?.sellingPrice ??
+          product?.price ??
+          product?.unitPrice,
+        mrpPrice: product?.mrpPrice,
+        images: Array.isArray(product?.images)
+          ? product.images
+          : [product?.image].filter(Boolean),
+        itemType: 'product',
+      },
+      source: 'buyNow',
+    });
+  }, [navigation, product, quantity]);
 
   const showActions = !isLoading && !!product && !error;
 
@@ -235,9 +299,9 @@ const ProductDetails = () => {
         </View>
 
         <View className="px-5">
-          <View className="mt-2">
+          <View className="mt-5">
             <View className="flex-row items-center">
-              <Text className="text-[28px] font-prociono text-[#FF8835]">
+              <Text className="text-2xl font-poppinsSemiBold text-[#FF8835]">
                 {formatCurrency(priceMeta.sellingPrice)}
               </Text>
             </View>
@@ -248,21 +312,21 @@ const ProductDetails = () => {
               <InfoRow
                 title="Category"
                 value={product.category.name}
-                icon={<ProductCategoryIcon size={24} />}
+                icon={<ProductCategoryIcon size={20} />}
               />
             ) : null}
             {tagText ? (
               <InfoRow
                 title="Tags"
                 value={tagText}
-                icon={<ProductTagIcon size={24} />}
+                icon={<ProductTagIcon size={20} />}
               />
             ) : null}
             {product?._id ? (
               <InfoRow
                 title="Product ID"
                 value={product._id}
-                icon={<ProductIdIcon size={24} />}
+                icon={<ProductIdIcon size={20} />}
               />
             ) : null}
           </View>
@@ -385,8 +449,8 @@ const ProductDetails = () => {
       {renderBody()}
       {showActions ? (
         <View
-          style={{paddingBottom: bottom + 12}}
-          className="px-5 pt-4 pb-5 border-t border-[#E2E8F0] bg-[#FEF8EF]">
+          style={{paddingBottom: bottom}}
+          className="px-5 pt-4 border-t border-[#E2E8F0] bg-[#FEF8EF]">
           <View className="flex-row justify-between">
             <View className="w-[49%] h-[50px]">
               <GradientButton title="Buy Now" onPress={handleBuyNow} />
@@ -394,9 +458,12 @@ const ProductDetails = () => {
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={handleAddToCart}
-              className="w-[49%] h-[50px] rounded-[14px] border border-[#FF8835] bg-white items-center justify-center">
+              disabled={isAddingToCart || !product}
+              className={`w-[49%] h-[50px] rounded-[14px] border border-[#FF8835] bg-white items-center justify-center ${
+                isAddingToCart || !product ? 'opacity-60' : ''
+              }`}>
               <Text className="text-base font-poppinsSemiBold text-[#FF8835]">
-                Add to Cart
+                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
               </Text>
             </TouchableOpacity>
           </View>
