@@ -33,6 +33,10 @@ const Home = ({ navigation }) => {
     },
   ];
 
+  const handleServicePress = service => {
+    navigation.navigate('ServiceDetails', {service});
+  };
+
   return (
     <View className="flex-1">
       {/* StatusBar */}

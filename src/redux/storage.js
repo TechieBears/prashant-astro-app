@@ -1,53 +1,50 @@
 import { MMKV } from 'react-native-mmkv';
 
-let storage;
+let mmkvInstance;
+
 try {
-  storage = new MMKV();
+  mmkvInstance = new MMKV();
 } catch (error) {
-  console.warn('MMKV not available, using fallback storage');
-  storage = null;
+  console.warn(
+    'MMKV unavailable, falling back to in-memory storage. Disable remote debugging for persistent storage.',
+    error
+  );
 }
 
-const fallbackStorage = {
-  data: {},
-  setItem: (key, value) => {
-    this.data[key] = value;
-    return Promise.resolve(true);
-  },
-  getItem: (key) => {
-    return Promise.resolve(this.data[key] || null);
-  },
-  removeItem: (key) => {
-    delete this.data[key];
-    return Promise.resolve();
-  },
+const memoryStore = {};
+
+const getMemoryValue = (key) => {
+  if (Object.prototype.hasOwnProperty.call(memoryStore, key)) {
+    return memoryStore[key];
+  }
+  return null;
 };
 
-export const mmkvStorage = {
-  setItem: (key, value) => {
-    if (storage) {
-      storage.set(key, value);
-    } else {
-      fallbackStorage.data[key] = value;
+export const mmkvStorage = mmkvInstance
+  ? {
+      setItem: (key, value) => {
+        mmkvInstance.set(key, value);
+        return Promise.resolve(true);
+      },
+      getItem: (key) => {
+        const value = mmkvInstance.getString(key);
+        return Promise.resolve(value);
+      },
+      removeItem: (key) => {
+        mmkvInstance.delete(key);
+        return Promise.resolve();
+      },
     }
-    return Promise.resolve(true);
-  },
-  getItem: (key) => {
-    if (storage) {
-      const value = storage.getString(key);
-      return Promise.resolve(value);
-    } else {
-      return Promise.resolve(fallbackStorage.data[key] || null);
-    }
-  },
-  removeItem: (key) => {
-    if (storage) {
-      storage.delete(key);
-    } else {
-      delete fallbackStorage.data[key];
-    }
-    return Promise.resolve();
-  },
-};
+  : {
+      setItem: (key, value) => {
+        memoryStore[key] = value;
+        return Promise.resolve(true);
+      },
+      getItem: (key) => Promise.resolve(getMemoryValue(key)),
+      removeItem: (key) => {
+        delete memoryStore[key];
+        return Promise.resolve();
+      },
+    };
 
 export default mmkvStorage;

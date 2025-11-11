@@ -3,6 +3,8 @@ import { BASE_URL } from '@env';
 import { store } from '../redux/store';
 import { logout } from '../redux/slices/authSlice';
 import { Alert } from 'react-native';
+import { BASE_URL } from './configConstant';
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -13,7 +15,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const state = store.getState();
-    const token = state.auth.token;
+    const token = state?.auth?.token;
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
