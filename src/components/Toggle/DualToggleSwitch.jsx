@@ -7,8 +7,8 @@ const SWITCH_GRADIENT_COLORS = ['#FFB347', '#FF5E57'];
 const ACTIVE_LEFT_GRADIENT = ['#FF9334', '#FFFFFF'];
 const ACTIVE_RIGHT_GRADIENT = ['#FFFFFF', '#FF9334'];
 
-const TRACK_WIDTH = 78;
-const TRACK_HEIGHT = 34;
+const TRACK_WIDTH = 75;
+const TRACK_HEIGHT = 33;
 const TRACK_RADIUS = TRACK_HEIGHT / 2;
 const THUMB_SIZE = TRACK_HEIGHT - 4;
 
@@ -105,7 +105,8 @@ const styles = StyleSheet.create({
     width: TRACK_WIDTH,
     height: TRACK_HEIGHT,
     borderRadius: TRACK_RADIUS,
-    padding: 2,
+    padding: 4,
+    paddingLeft: 1,
     backgroundColor: 'transparent',
   },
   switchThumb: {

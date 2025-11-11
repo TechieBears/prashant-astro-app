@@ -12,6 +12,8 @@ import CheckAvailability from '../screens/Service/CheckAvailability';
 import BookingSummary from '../screens/Service/BookingSummary';
 import BookingSuccess from '../screens/Service/BookingSuccess';
 import Product from '../screens/Product/index';
+import ProductDetails from '../screens/Product/ProductDetails';
+import ProductSummary from '../screens/Product/ProductSummary';
 import Profile from '../screens/Profile';
 import EditProfile from '../screens/Profile/EditProfile';
 import Address from '../screens/Profile/Address/index';
@@ -219,6 +221,8 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="ServiceDetails" component={ServiceDetails} />
+      <Stack.Screen name="ProductDetails" component={ProductDetails} />
+      <Stack.Screen name="ProductSummary" component={ProductSummary} />
       <Stack.Screen name="CheckAvailability" component={CheckAvailability} />
       <Stack.Screen name="BookingSummary" component={BookingSummary} />
       <Stack.Screen name="BookingSuccess" component={BookingSuccess} />

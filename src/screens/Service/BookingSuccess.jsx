@@ -4,6 +4,7 @@ import {useNavigation, useRoute, CommonActions} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import GradientButton from '../../components/Buttons/GradientButton';
 import {BookingSuccessBadgeIcon, ClipboardCopyIcon} from '../../utils/svgIcons';
+import {buildSuccessScreenData} from '../../utils/successMapper';
 import moment from 'moment';
 
 const formatCurrency = amount => {
@@ -31,14 +32,16 @@ const BookingSuccess = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const {top, bottom} = useSafeAreaInsets();
-  const bookingDetails = route.params?.bookingDetails ?? {};
-  const bookingResponse = route.params?.bookingResponse ?? {};
-  const bookedServiceItem = route.params?.bookedServiceItem ?? null;
-  const pricingSummary = route.params?.pricingSummary ?? {};
-  const orderResponse = route.params?.orderResponse ?? {};
-  const orderRequest = route.params?.orderRequest ?? {};
-
-  const orderDetails = orderResponse?.order ?? {};
+  const successData = buildSuccessScreenData(route.params);
+  const bookingDetails = successData.bookingDetails;
+  const bookingResponse = successData.bookingResponse;
+  const bookedServiceItem = successData.bookedServiceItem;
+  const pricingSummary = successData.pricingSummary;
+  const orderResponse = successData.orderResponse;
+  const orderRequest = successData.orderRequest;
+  const orderDetails = successData.orderDetails ?? {};
+  const transactionId = successData.transactionId;
+  const transactionIdCopySource = successData.transactionIdCopySource;
   const orderServices = Array.isArray(orderDetails?.services)
     ? orderDetails.services
     : [];
@@ -47,14 +50,8 @@ const BookingSuccess = () => {
       ? orderServices[orderServices.length - 1]
       : null;
 
-  const transactionId =
-    orderDetails?._id ??
-    bookingResponse?.transactionId ??
-    bookingResponse?.paymentId ??
-    bookingResponse?.referenceId ??
-    '';
-
   const totalPaidAmount =
+    successData.totalPaidAmount ??
     orderDetails?.payingAmount ??
     orderDetails?.finalAmount ??
     orderDetails?.totalAmount ??
@@ -121,7 +118,7 @@ const BookingSuccess = () => {
       {
         label: 'Transaction ID',
         value: transactionId || 'N/A',
-        showCopy: Boolean(transactionId),
+        showCopy: Boolean(transactionIdCopySource),
       },
       {
         label: 'Booked On',
@@ -172,7 +169,7 @@ const BookingSuccess = () => {
   };
 
   return (
-    <View className="flex-1 bg-[#FEF8EF]" style={{paddingBottom: bottom + 40}}>
+    <View className="flex-1 bg-[#FEF8EF]" style={{paddingBottom: bottom}}>
       <StatusBar barStyle="light-content" backgroundColor="#12B35D" />
       <View
         className="bg-[#00C950] justify-center items-center"

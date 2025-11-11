@@ -183,3 +183,92 @@ export const bookService = async (bookingPayload) => {
     throw error;
   }
 };
+
+// Product APIs
+
+export const getProducts = async () => {
+  try {
+    const response = await apiClient.get('/product/public/active');
+    return response.data;
+  } catch (error) {
+    console.log('Get products error:', error);
+    throw error;
+  }
+};
+
+export const getProductsCategories = async () => {
+  try {
+    const response = await apiClient.get('product/public/filter');
+    return response.data;
+  } catch (error) {
+    console.log('Get product categories error:', error);
+    throw error;
+  }
+};
+
+export const getProductDetails = async productId => {
+  try {
+    if (!productId) {
+      throw new Error('Product ID is required');
+    }
+    const response = await apiClient.get(
+      `/product/public/active-single?id=${productId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
+export const addToCartProduct = async productPayload => {
+  try {
+    const response = await apiClient.post(`/product-cart/public/add`, productPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
+export const getProductCartData = async () => {
+  try {
+    const response = await apiClient.get(`/product-cart/public/get`);
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
+
+export const updateProductCartData = async (productPayload) => {
+  try {
+    const response = await apiClient.put(`/product-cart/public/update`, productPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
+export const deleteProductFromCart = async (productPayload) => {
+  try {
+    const response = await apiClient.put(`/product-cart/public/remove-item`, productPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
+export const productOrderPlace = async (productPayload) => {
+  try {
+    const response = await apiClient.post(`/product-order/public/create`, productPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get product details error:', error);
+    throw error;
+  }
+};
+
