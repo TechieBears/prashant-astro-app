@@ -20,7 +20,7 @@ const RootNavigator = () => {
       setShowSplash(false);  // Hide splash screen after 2 seconds
     }, 2000);  // 2 seconds timeout
   }, []);
-
+  console.log('skip', skip, isAuthenticated)
   if (showSplash) {
     return (
       <>
