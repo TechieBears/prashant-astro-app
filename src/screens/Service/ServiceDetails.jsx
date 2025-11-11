@@ -19,7 +19,7 @@ import {
 import GradientButton from '../../components/Buttons/GradientButton';
 import LinearGradient from 'react-native-linear-gradient';
 import ServiceCard from '../../components/Cards/Service';
-import {getSingleServicesDetails} from '../../services';
+import { getSingleServicesDetails } from '../../services/api';
 import RenderHtml from 'react-native-render-html';
 
 const DEFAULT_SERVICE_IMAGE = 'https://i.postimg.cc/CxhQnSxt/Astrology.png';

@@ -21,7 +21,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import GradientButton from '../../components/Buttons/GradientButton';
 import ProductCard from '../../components/Cards/Product';
-import {getProductDetails, addToCartProduct} from '../../services';
+import {getProductDetails, addToCartProduct} from '../../services/api';
 import {
   ProductCategoryIcon,
   ProductTagIcon,

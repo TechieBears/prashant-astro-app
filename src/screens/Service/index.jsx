@@ -15,7 +15,7 @@ import {MicOutlineIcon} from '../../utils/svgIcons';
 import ServiceCard from '../../components/Cards/Service';
 import {CATEGORY_ACTIVE_GRADIENT, HEADER_GRADIENT} from '../../utils/gradients';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import { getServiceCategories, getServices } from '../../services';
+import { getServiceCategories, getServices } from '../../services/api';
 
 const DEFAULT_SERVICE_IMAGE = 'https://i.postimg.cc/CxhQnSxt/Astrology.png';
 

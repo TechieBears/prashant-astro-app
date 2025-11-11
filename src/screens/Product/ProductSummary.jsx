@@ -25,7 +25,7 @@ import {
   deleteProductFromCart,
   productOrderPlace,
   getCustomerAddresses,
-} from '../../services';
+} from '../../services/api';
 import AddressCard from '../../components/AddressCard';
 import {buildProductSuccessParams} from '../../utils/successMapper';
 
