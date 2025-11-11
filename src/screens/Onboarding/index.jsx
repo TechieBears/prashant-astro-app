@@ -59,103 +59,104 @@ const OnboardingScreen = () => {
   const isLast = currentIndex === slides.length - 1;
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <View className="flex-1 bg-black">
       <ImageBackground
         source={slide.image}
         resizeMode="cover"
-        style={{ width, height }}
-        className="justify-end"
+        style={{ flex: 1 }}
       >
         {/* Overlay */}
         <View className="absolute inset-0 bg-black/40" />
 
-        {/* Bottom Content with Glass Effect */}
-        <View className="p-6">
-          <View 
-          style={{ backgroundColor: '#00000040' }}
-          className=" rounded-xl p-4 w-full border border-white/10"
-        >
-          {/* Text Container with Glass Effect */}
-          <View 
-            className="rounded-3xl p-6 mb-1 "
+        <SafeAreaView className="flex-1 justify-end">
+          {/* Bottom Content with Glass Effect */}
+          <View className="p-6">
+            <View 
+            style={{ backgroundColor: '#00000040' }}
+            className=" rounded-xl p-4 w-full border border-white/10"
           >
-            <Text className="text-white px-6 text-center text-3xl font-bold mb-2">
-              {slide.title}
-            </Text>
-            <Text className="text-gray-200 px-2 text-base text-center">
-              {slide.description}
-            </Text>
-          </View>
-
-          {/* Pagination Dots */}
-          <View className="flex-row justify-center mb-3">
-            {slides.map((_, index) => (
-              <View
-                key={index}
-                className={`h-2 rounded-full mx-1 ${
-                  currentIndex === index
-                    ? "w-8 bg-primary"
-                    : "w-2.5 bg-white/40"
-                }`}
-              />
-            ))}
-          </View>
-
-          {/* Navigation Buttons with Glass Effect */}
-          <View 
-            className="flex-row justify-between items-end  w-full "
-          >
-            {/* Previous Button */}
-            <TouchableOpacity
-              onPress={handlePrevious}
-              disabled={currentIndex === 0}
-              style={{ backgroundColor: '#FFFFFF26' }}
-              className="w-14 h-14 rounded-full items-center justify-center blur-md"
+            {/* Text Container with Glass Effect */}
+            <View 
+              className="rounded-3xl p-6 mb-1 "
             >
-              <ArrowLeft02Icon
-                size={28}
-                color={currentIndex === 0 ? "#FFFFFF40" : "#FFFFFF"}
-                className="font-bold"
-              />
+              <Text className="text-white px-6 text-center text-3xl font-bold mb-2">
+                {slide.title}
+              </Text>
+              <Text className="text-gray-200 px-2 text-base text-center">
+                {slide.description}
+              </Text>
+            </View>
 
-            </TouchableOpacity>
+            {/* Pagination Dots */}
+            <View className="flex-row justify-center mb-3">
+              {slides.map((_, index) => (
+                <View
+                  key={index}
+                  className={`h-2 rounded-full mx-1 ${
+                    currentIndex === index
+                      ? "w-8 bg-primary"
+                      : "w-2.5 bg-white/40"
+                  }`}
+                />
+              ))}
+            </View>
 
-            {/* Next/Get Started Button */}
-            <TouchableOpacity
-              onPress={handleNext}
-              style={{ backgroundColor: '#FFFFFF26' }}
-              className="w-14 h-14 rounded-full items-center justify-center blur-md"
+            {/* Navigation Buttons with Glass Effect */}
+            <View 
+              className="flex-row justify-between items-end  w-full "
             >
-              {/* <BlurView
-        style={{
-          borderRadius: 20,
-          width: 15,
-          height: 15,
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRadius: 20,
-          padding: 20,
-          backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent background
-        }}
-        blurType="light"
-        blurAmount={10}
-      > */}
-              {/* <Text className="text-white font-semibold text-base mr-2">
-                {isLast ? "Get Started" : "Next"}
-              </Text> */}
-              <ArrowRight02Icon size={28} color="#FFFFFF" className="font-bold" />
-              {/* </BlurView> */}
-            </TouchableOpacity>
+              {/* Previous Button */}
+              <TouchableOpacity
+                onPress={handlePrevious}
+                disabled={currentIndex === 0}
+                style={{ backgroundColor: '#FFFFFF26' }}
+                className="w-14 h-14 rounded-full items-center justify-center blur-md"
+              >
+                <ArrowLeft02Icon
+                  size={28}
+                  color={currentIndex === 0 ? "#FFFFFF40" : "#FFFFFF"}
+                  className="font-bold"
+                />
 
-            {/* Placeholder for symmetry when on first slide */}
-            {/* {currentIndex === 0 && (
-              <View className="w-14 h-14" />
-            )} */}
+              </TouchableOpacity>
+
+              {/* Next/Get Started Button */}
+              <TouchableOpacity
+                onPress={handleNext}
+                style={{ backgroundColor: '#FFFFFF26' }}
+                className="w-14 h-14 rounded-full items-center justify-center blur-md"
+              >
+                {/* <BlurView
+          style={{
+            borderRadius: 20,
+            width: 15,
+            height: 15,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 20,
+            padding: 20,
+            backgroundColor: 'rgba(255, 255, 255, 0.2)', // Semi-transparent background
+          }}
+          blurType="light"
+          blurAmount={10}
+        > */}
+                {/* <Text className="text-white font-semibold text-base mr-2">
+                  {isLast ? "Get Started" : "Next"}
+                </Text> */}
+                <ArrowRight02Icon size={28} color="#FFFFFF" className="font-bold" />
+                {/* </BlurView> */}
+              </TouchableOpacity>
+
+              {/* Placeholder for symmetry when on first slide */}
+              {/* {currentIndex === 0 && (
+                <View className="w-14 h-14" />
+              )} */}
+            </View>
           </View>
-        </View>
-        </View>
+          </View>
+        </SafeAreaView>
       </ImageBackground>
-    </SafeAreaView>
+    </View>
   );
 };
 

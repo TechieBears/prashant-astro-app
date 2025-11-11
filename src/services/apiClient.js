@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { BASE_URL } from '@env';
 import { store } from '../redux/store';
 import { logout } from '../redux/slices/authSlice';
 import { Alert } from 'react-native';
