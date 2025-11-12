@@ -2,8 +2,8 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
-// Import MainTabNavigator and other screens
-import MainTabNavigator from './Tabs';
+// Import DrawerNavigator and other screens
+import DrawerNavigator from './DrawerNavigator';
 import ServiceDetails from '../screens/Service/ServiceDetails';
 import ProductDetails from '../screens/Product/ProductDetails';
 import ProductSummary from '../screens/Product/ProductSummary';
@@ -21,7 +21,7 @@ const Stack = createStackNavigator();
 const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="DrawerTabs" component={DrawerNavigator} />
       <Stack.Screen name="ServiceDetails" component={ServiceDetails} />
       <Stack.Screen name="ProductDetails" component={ProductDetails} />
       <Stack.Screen name="ProductSummary" component={ProductSummary} />

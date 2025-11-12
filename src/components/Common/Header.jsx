@@ -1,8 +1,10 @@
 import { View, Text, TouchableOpacity, Image, StatusBar } from 'react-native'
 import React from 'react'
 import { ShoppingCart02Icon, Notification01Icon, UserIcon } from 'hugeicons-react-native'
+import { useNavigation } from '@react-navigation/native'
 
 export default function Header() {
+  const navigation = useNavigation();
   return (
     <View className='bg-white p-2 pb-4'  >
       <StatusBar
@@ -31,7 +33,10 @@ export default function Header() {
           <TouchableOpacity className='bg-background p-2 rounded-md border-[#00000026] border-[1px]'>
             <ShoppingCart02Icon color="#314158" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity className='bg-background p-2 rounded-md border-[#00000026] border-[1px]'>
+          <TouchableOpacity 
+            className='bg-background p-2 rounded-md border-[#00000026] border-[1px]'
+            onPress={() => navigation.openDrawer()}
+          >
             <UserIcon color="#314158" size={20} />
           </TouchableOpacity>
         </View>
