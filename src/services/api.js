@@ -282,3 +282,30 @@ export const productOrderPlace = async (productPayload) => {
   }
 };
 
+// Coupon APIs
+
+export const getCoupons = async (couponType = 'services') => {
+  try {
+    const response = await apiClient.get(
+      `/coupon/public/get-all?couponType=${couponType}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.log('Get coupons error:', error);
+    throw error;
+  }
+};
+
+export const applyCoupons = async (couponPayload, couponType = 'service') => {
+  try {
+    const endpoint =
+      couponType === 'product'
+        ? '/coupon/product/apply'
+        : '/coupon/service/apply';
+    const response = await apiClient.post(endpoint, couponPayload);
+    return response.data;
+  } catch (error) {
+    console.log('Get coupons error:', error);
+    throw error;
+  }
+};

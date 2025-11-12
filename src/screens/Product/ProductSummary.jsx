@@ -13,6 +13,8 @@ import {useNavigation, useRoute, useFocusEffect} from '@react-navigation/native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {ArrowLeft02Icon, Location06Icon, Delete02Icon} from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
+import CouponCard from '../../components/Cards/CouponCard';
+import CouponSelectionSheet from '../../components/BottomSheet/CouponSelectionSheet';
 import {
   SessionDurationIcon,
   PhoneOutlineIcon,
@@ -25,6 +27,8 @@ import {
   deleteProductFromCart,
   productOrderPlace,
   getCustomerAddresses,
+  getCoupons,
+  applyCoupons,
 } from '../../services/api';
 import AddressCard from '../../components/AddressCard';
 import {buildProductSuccessParams} from '../../utils/successMapper';
@@ -170,6 +174,14 @@ const ProductSummary = () => {
   const [selectedAddressId, setSelectedAddressId] = useState(
     route.params?.addressId ?? null,
   );
+  const [isCouponSheetVisible, setCouponSheetVisible] = useState(false);
+  const [selectedCouponId, setSelectedCouponId] = useState('');
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponList, setCouponList] = useState([]);
+  const [couponError, setCouponError] = useState('');
+  const [couponApplySummary, setCouponApplySummary] = useState(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
 useEffect(() => {
   if (isBuyNowFlow && buyNowItem) {
@@ -179,6 +191,34 @@ useEffect(() => {
     setCartError('');
   }
 }, [buyNowItem, isBuyNowFlow]);
+
+useEffect(() => {
+  let isActive = true;
+  setCouponError('');
+  getCoupons('products')
+    .then(response => {
+      if (!isActive) {
+        return;
+      }
+      const payload = response?.data ?? response;
+      const couponsArray = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
+      setCouponList(couponsArray);
+    })
+    .catch(error => {
+      console.log('Failed to fetch product coupons', error);
+      if (isActive) {
+        setCouponError('Coupons are unavailable right now.');
+        setCouponList([]);
+      }
+    });
+  return () => {
+    isActive = false;
+  };
+}, []);
 
 useEffect(() => {
   let isMounted = true;
@@ -449,7 +489,11 @@ useEffect(() => {
   const gstAmount = baseAmount * gstRate;
   const totalAmount = baseAmount + gstAmount;
   const isPayDisabled =
-    isCartLoading || !cartItems.length || isPlacingOrder || !selectedAddressId;
+    isCartLoading ||
+    !cartItems.length ||
+    isPlacingOrder ||
+    !selectedAddressId ||
+    isApplyingCoupon;
   const selectedAddress = useMemo(() => {
     if (!selectedAddressId) {
       return null;
@@ -481,6 +525,58 @@ useEffect(() => {
     const postal = selectedAddress?.pincode ?? selectedAddress?.zipCode ?? '';
     return [primaryLine, cityState, postal].filter(Boolean).join(', ');
   }, [fallbackDeliveryAddress, selectedAddress]);
+
+  const availableCoupons = useMemo(() => (couponList.length ? couponList : []), [couponList]);
+
+  const selectedCoupon = useMemo(() => {
+    if (!selectedCouponId) {
+      return null;
+    }
+    return (
+      availableCoupons.find(coupon => {
+        const identifier =
+          coupon?._id ?? coupon?.id ?? coupon?.couponCode ?? '';
+        return identifier === selectedCouponId;
+      }) ?? null
+    );
+  }, [availableCoupons, selectedCouponId]);
+
+  const appliedCouponSavingsLabel = useMemo(() => {
+    if (couponApplySummary?.discountAmount) {
+      return `₹${couponApplySummary.discountAmount}`;
+    }
+    if (couponApplySummary?.discountValue) {
+      const suffix =
+        couponApplySummary.discountIn === 'percent' ? '%' : '';
+      return `${couponApplySummary.discountValue}${suffix}`;
+    }
+    if (appliedCoupon) {
+      return getCouponSavingLabel(appliedCoupon);
+    }
+    return '';
+  }, [appliedCoupon, couponApplySummary]);
+
+  const couponCardSubtitle = useMemo(() => {
+    if (appliedCoupon && appliedCouponSavingsLabel) {
+      return `${appliedCoupon.couponCode ?? 'Coupon'} applied • Save ${appliedCouponSavingsLabel}`;
+    }
+    if (availableCoupons.length === 0) {
+      return 'No coupons available right now';
+    }
+    return 'Apply a coupon to save on your order';
+  }, [appliedCoupon, appliedCouponSavingsLabel, availableCoupons.length]);
+
+  useEffect(() => {
+    if (isCouponSheetVisible && appliedCoupon) {
+      const appliedId =
+        appliedCoupon._id ??
+        appliedCoupon.id ??
+        appliedCoupon.couponCode ??
+        '';
+      setSelectedCouponId(appliedId);
+      setCouponCodeInput(appliedCoupon.couponCode ?? '');
+    }
+  }, [appliedCoupon, isCouponSheetVisible]);
 
   const handlePayNow = useCallback(async () => {
     if (isPayDisabled) {
@@ -543,6 +639,13 @@ useEffect(() => {
       paymentMethod,
       paymentDetails,
     };
+    if (appliedCoupon) {
+      const couponId =
+        appliedCoupon._id ?? appliedCoupon.id ?? appliedCoupon.couponId;
+      if (couponId) {
+        orderPayload.couponId = couponId;
+      }
+    }
 
     try {
       setIsPlacingOrder(true);
@@ -569,6 +672,7 @@ useEffect(() => {
       setIsPlacingOrder(false);
     }
   }, [
+    appliedCoupon,
     baseAmount,
     cartItems,
     gstAmount,
@@ -591,6 +695,107 @@ useEffect(() => {
   const handleManageAddresses = useCallback(() => {
     navigation.navigate('Address');
   }, [navigation]);
+
+  const handleCouponPress = useCallback(() => {
+    setCouponSheetVisible(true);
+  }, []);
+
+  const handleCouponSheetClose = useCallback(() => {
+    setCouponSheetVisible(false);
+  }, []);
+
+  const handleCouponCodeChange = useCallback(value => {
+    setCouponCodeInput((value ?? '').toUpperCase());
+  }, []);
+
+  const handleSelectCoupon = useCallback(coupon => {
+    if (!coupon) {
+      return;
+    }
+    const identifier = coupon._id ?? coupon.id ?? coupon.couponCode ?? '';
+    setSelectedCouponId(identifier);
+    setCouponCodeInput(coupon.couponCode ? coupon.couponCode.toUpperCase() : '');
+  }, []);
+
+  const handleCheckCouponCode = useCallback(() => {
+    const code = (couponCodeInput || '').trim();
+    if (!code) {
+      Alert.alert('Coupons', 'Enter a coupon code to check.');
+      return;
+    }
+    const normalized = code.toUpperCase();
+    const matched =
+      availableCoupons.find(
+        coupon => (coupon?.couponCode || '').toUpperCase() === normalized,
+      ) ?? null;
+    if (matched) {
+      const identifier =
+        matched._id ?? matched.id ?? matched.couponCode ?? normalized;
+      setSelectedCouponId(identifier);
+      Alert.alert('Coupons', 'Coupon found. Tap apply to continue.');
+      return;
+    }
+    Alert.alert('Coupons', 'Coupon not valid for these products.');
+  }, [availableCoupons, couponCodeInput]);
+
+  const handleApplyCoupon = useCallback(() => {
+    if (!selectedCoupon) {
+      Alert.alert('Coupons', 'Select a coupon to apply.');
+      return;
+    }
+    const productIds = cartItems
+      .map(
+        item => item?.productId ?? item?._id ?? item?.id ?? item?.itemId ?? null,
+      )
+      .filter(Boolean);
+    if (productIds.length === 0) {
+      Alert.alert(
+        'Coupons',
+        'Unable to identify products for applying the coupon.',
+      );
+      return;
+    }
+    setIsApplyingCoupon(true);
+    const payload = {
+      couponCode: selectedCoupon.couponCode ?? selectedCoupon.code ?? '',
+      products: productIds,
+    };
+    applyCoupons(payload, 'product')
+      .then(response => {
+        const summary =
+          response?.data ?? response?.couponInfo ?? response ?? {};
+        setCouponApplySummary(summary);
+        setAppliedCoupon(selectedCoupon);
+        setCouponSheetVisible(false);
+        Alert.alert(
+          'Coupons',
+          response?.message ??
+            `${selectedCoupon.couponCode ?? 'Coupon'} applied successfully.`,
+        );
+      })
+      .catch(error => {
+        console.log('Product coupon apply error', error);
+        const message =
+          error?.response?.data?.message ??
+          error?.response?.data?.error ??
+          'Unable to apply coupon.';
+        Alert.alert('Coupons', message);
+      })
+      .finally(() => {
+        setIsApplyingCoupon(false);
+      });
+  }, [cartItems, selectedCoupon]);
+
+  const handleRemoveAppliedCoupon = useCallback(() => {
+    if (!appliedCoupon) {
+      return;
+    }
+    setAppliedCoupon(null);
+    setCouponApplySummary(null);
+    setSelectedCouponId('');
+    setCouponCodeInput('');
+    Alert.alert('Coupons', 'Coupon removed.');
+  }, [appliedCoupon]);
 
   const renderAddressSection = () => {
     if (isAddressLoading) {
@@ -821,6 +1026,57 @@ useEffect(() => {
           </View>
           {renderAddressSection()}
 
+          {availableCoupons.length > 0 || appliedCoupon ? (
+            <>
+              {appliedCoupon ? (
+                <View className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-2xl px-4 py-4 mb-4">
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className="font-poppinsSemiBold text-[15px] text-[#065F46]">
+                        {appliedCoupon.couponCode ?? 'Coupon'} Applied
+                      </Text>
+                      <Text className="font-poppins text-[13px] text-[#047857] mt-1">
+                        Enjoy {appliedCouponSavingsLabel || 'extra savings'} on this order.
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={handleRemoveAppliedCoupon}>
+                      <Text className="text-[#047857] text-lg font-poppinsSemiBold">
+                        ×
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleCouponPress}
+                    className="mt-3"
+                    activeOpacity={0.85}>
+                    <Text className="font-poppinsSemiBold text-[13px] text-[#047857] underline">
+                      Change Coupon
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <CouponCard
+                  className="mb-4"
+                  subtitle={couponCardSubtitle}
+                  ctaLabel="Check Available Coupons"
+                  onPress={handleCouponPress}
+                />
+              )}
+            </>
+          ) : (
+            <CouponCard
+              className="mb-4"
+              subtitle="No coupons available for this order"
+              ctaLabel="Check Available Coupons"
+              onPress={handleCouponPress}
+            />
+          )}
+          {couponError ? (
+            <Text className="text-primary2 font-poppins text-xs mb-3">
+              {couponError}
+            </Text>
+          ) : null}
+
           <View className="bg-white rounded-[10px] p-3 py-4 shadow-sm shadow-[#E5E7EB] mb-4">
             <SummaryRow
               label={`Product ${totalUnits}x (incl. GST)`}
@@ -856,6 +1112,20 @@ useEffect(() => {
           icon={false}
         />
       </View>
+      <CouponSelectionSheet
+        isVisible={isCouponSheetVisible}
+        onClose={handleCouponSheetClose}
+        coupons={availableCoupons}
+        selectedCouponId={selectedCouponId}
+        onSelectCoupon={handleSelectCoupon}
+        onApply={handleApplyCoupon}
+        couponCode={couponCodeInput}
+        onCouponCodeChange={handleCouponCodeChange}
+        onCheckCoupon={handleCheckCouponCode}
+        isApplyDisabled={!selectedCoupon || isApplyingCoupon}
+        isApplying={isApplyingCoupon}
+        maxSavingsLabel={appliedCouponSavingsLabel}
+      />
     </View>
   );
 };

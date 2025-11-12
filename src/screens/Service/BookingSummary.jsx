@@ -17,7 +17,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Path} from 'react-native-svg';
 import {ArrowLeft02Icon} from 'hugeicons-react-native';
 import GradientButton from '../../components/Buttons/GradientButton';
-import {bookService, getCartData, removeFromCartService} from '../../services/api';
+import CouponCard from '../../components/Cards/CouponCard';
+import CouponSelectionSheet from '../../components/BottomSheet/CouponSelectionSheet';
+import {
+  bookService,
+  getCartData,
+  removeFromCartService,
+  getCoupons,
+  applyCoupons,
+} from '../../services/api';
 import {
   SessionDurationIcon,
   BookingDateIcon,
@@ -31,6 +39,16 @@ import {
 
 const DEFAULT_DURATION = '30-60 minutes';
 const DEFAULT_MODE = 'Consult Online';
+
+const getCouponSavingLabel = coupon => {
+  if (!coupon) {
+    return '';
+  }
+  if (coupon.discountIn === 'percent') {
+    return `${coupon.discount ?? 0}%`;
+  }
+  return `₹${coupon.discount ?? 0}`;
+};
 const showToastMessage = message => {
   if (!message) {
     return;
@@ -315,6 +333,14 @@ const BookingSummary = () => {
   const [isCartLoading, setIsCartLoading] = useState(false);
   const [cartError, setCartError] = useState('');
   const [cartActionLoading, setCartActionLoading] = useState(false);
+  const [isCouponSheetVisible, setCouponSheetVisible] = useState(false);
+  const [selectedCouponId, setSelectedCouponId] = useState('');
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponList, setCouponList] = useState([]);
+  const [couponError, setCouponError] = useState('');
+  const [couponApplySummary, setCouponApplySummary] = useState(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const bookingDetails = route.params?.bookingDetails ?? {};
   const bookingResponse = route.params?.bookingResponse ?? {};
@@ -326,8 +352,59 @@ const BookingSummary = () => {
     bookingDetails?.lastName,
   ) || bookingDetails?.fullName || '';
 
-  console.log("cartItem:", cartItems);
-  
+  const availableCoupons = useMemo(() => {
+    if (couponList.length > 0) {
+      return couponList;
+    }
+    return [];
+  }, [couponList]);
+
+  const selectedCoupon = useMemo(() => {
+    if (!selectedCouponId) {
+      return null;
+    }
+    return (
+      availableCoupons.find(coupon => {
+        const couponIdentifier =
+          coupon?._id ?? coupon?.id ?? coupon?.couponCode ?? '';
+        return couponIdentifier === selectedCouponId;
+      }) ?? null
+    );
+  }, [availableCoupons, selectedCouponId]);
+
+  const appliedCouponSavingsLabel = useMemo(() => {
+    if (couponApplySummary?.discountAmount) {
+      return `₹${couponApplySummary.discountAmount}`;
+    }
+    if (couponApplySummary?.discountValue) {
+      return `${couponApplySummary.discountValue}${
+        couponApplySummary.discountIn === 'percent' ? '%' : ''
+      }`;
+    }
+    return getCouponSavingLabel(appliedCoupon);
+  }, [appliedCoupon, couponApplySummary]);
+
+  const couponCardSubtitle = useMemo(() => {
+    if (appliedCoupon && appliedCouponSavingsLabel) {
+      return `${appliedCoupon.couponCode ?? 'Coupon'} applied • Save ${appliedCouponSavingsLabel}`;
+    }
+    if (couponList.length === 0) {
+      return 'No coupons available right now';
+    }
+    return 'Apply a coupon to save more on this booking';
+  }, [appliedCoupon, appliedCouponSavingsLabel, couponList.length]);
+
+  useEffect(() => {
+    if (isCouponSheetVisible && appliedCoupon) {
+      const appliedId =
+        appliedCoupon._id ??
+        appliedCoupon.id ??
+        appliedCoupon.couponCode ??
+        '';
+      setSelectedCouponId(appliedId);
+      setCouponCodeInput(appliedCoupon.couponCode ?? '');
+    }
+  }, [appliedCoupon, isCouponSheetVisible]);
 
   useEffect(() => {
     let isMounted = true;
@@ -363,6 +440,34 @@ const BookingSummary = () => {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    setCouponError('');
+    getCoupons('services')
+      .then(response => {
+        if (!isActive) {
+          return;
+        }
+        const payload = response?.data ?? response;
+        const couponsArray = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+        setCouponList(couponsArray);
+      })
+      .catch(error => {
+        console.log('Failed to fetch coupons', error);
+        if (isActive) {
+          setCouponError('Unable to load coupons.');
+          setCouponList([]);
+        }
+      });
+    return () => {
+      isActive = false;
     };
   }, []);
 
@@ -776,6 +881,13 @@ const BookingSummary = () => {
       },
       serviceItems,
     };
+    if (appliedCoupon) {
+      const couponId =
+        appliedCoupon._id ?? appliedCoupon.id ?? appliedCoupon.couponId;
+      if (couponId) {
+        orderPayload.couponId = couponId;
+      }
+    }
 
     setOrderError('');
     setIsPlacingOrder(true);
@@ -863,6 +975,118 @@ const BookingSummary = () => {
     () => formatAddressLine(addressDetail),
     [addressDetail],
   );
+
+  const handleCouponPress = useCallback(() => {
+    setCouponSheetVisible(true);
+  }, []);
+
+  const handleCouponSheetClose = useCallback(() => {
+    setCouponSheetVisible(false);
+  }, []);
+
+  const handleCouponCodeChange = useCallback(value => {
+    setCouponCodeInput((value ?? '').toUpperCase());
+  }, []);
+
+  const handleSelectCoupon = useCallback(coupon => {
+    if (!coupon) {
+      return;
+    }
+    const identifier = coupon._id ?? coupon.id ?? coupon.couponCode ?? '';
+    setSelectedCouponId(identifier);
+    setCouponCodeInput(coupon.couponCode ? coupon.couponCode.toUpperCase() : '');
+  }, []);
+
+  const handleCheckCouponCode = useCallback(() => {
+    const trimmedCode = (couponCodeInput || '').trim();
+    if (!trimmedCode) {
+      showToastMessage('Enter a coupon code to check.');
+      return;
+    }
+    const normalized = trimmedCode.toUpperCase();
+    const matchedCoupon =
+      availableCoupons.find(coupon => {
+        const code = (coupon?.couponCode || '').toUpperCase();
+        return code === normalized;
+      }) ?? null;
+    if (matchedCoupon) {
+      const identifier =
+        matchedCoupon._id ??
+        matchedCoupon.id ??
+        matchedCoupon.couponCode ??
+        normalized;
+      setSelectedCouponId(identifier);
+      showToastMessage('Coupon found. Tap apply to continue.');
+      return;
+    }
+    showToastMessage('Coupon not found for this booking.');
+  }, [availableCoupons, couponCodeInput]);
+
+  const handleApplyCoupon = useCallback(() => {
+    if (!selectedCoupon) {
+      showToastMessage('Please select a coupon to apply.');
+      return;
+    }
+    const servicesPayload = cartItems.length
+      ? cartItems
+          .map(item => item?.serviceId ?? item?.raw?.serviceId)
+          .filter(Boolean)
+      : bookingRequest?.serviceId
+      ? [bookingRequest.serviceId]
+      : bookedServiceItem?.serviceId
+      ? [bookedServiceItem.serviceId]
+      : [];
+    if (servicesPayload.length === 0) {
+      showToastMessage('Unable to identify services for applying coupon.');
+      return;
+    }
+    setIsApplyingCoupon(true);
+    const payload = {
+      couponCode: selectedCoupon.couponCode ?? selectedCoupon.code ?? '',
+      services: servicesPayload,
+    };
+    applyCoupons(payload)
+      .then(response => {
+        const summary =
+          response?.data ??
+          response?.couponInfo ??
+          response ?? {};
+        setCouponApplySummary(summary);
+        setAppliedCoupon(selectedCoupon);
+        setCouponSheetVisible(false);
+        showToastMessage(
+          response?.message ??
+            `${selectedCoupon.couponCode ?? 'Coupon'} applied successfully.`,
+        );
+      })
+      .catch(error => {
+        console.log('Failed to apply coupon', error);
+        const message =
+          error?.response?.data?.message ??
+          error?.response?.data?.error ??
+          'Unable to apply coupon.';
+        showToastMessage(message);
+      })
+      .finally(() => {
+        setIsApplyingCoupon(false);
+      });
+  }, [
+    bookedServiceItem?.serviceId,
+    bookingRequest?.serviceId,
+    cartItems,
+    selectedCoupon,
+  ]);
+
+  const handleRemoveAppliedCoupon = useCallback(() => {
+    if (!appliedCoupon) {
+      return;
+    }
+    setAppliedCoupon(null);
+    setCouponApplySummary(null);
+    setSelectedCouponId('');
+    setCouponCodeInput('');
+    showToastMessage('Coupon removed.');
+  }, [appliedCoupon]);
 
   return (
     <View className="flex-1 bg-[#FEF8EF]">
@@ -1011,6 +1235,53 @@ const BookingSummary = () => {
               </View>
             </View>
 
+            {appliedCoupon ? (
+              <View className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-[10px] px-4 py-4 mt-1">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center">
+                    <View className="w-5 h-5 rounded-[5px] bg-[#22C55E] items-center justify-center mr-3">
+                      <Text className="text-white text-xs font-poppinsSemiBold">
+                        ✓
+                      </Text>
+                    </View>
+                    <Text className="font-poppinsSemiBold text-[15px] text-[#065F46]">
+                      {appliedCoupon.couponCode ?? 'Coupon'} Applied
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={handleRemoveAppliedCoupon}
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+                    <Text className="text-[#0F172A] text-base font-poppinsSemiBold">
+                      ×
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text className="font-poppins text-[13px] text-[#047857]">
+                  Enjoy {appliedCouponSavingsLabel || 'extra savings'} on this booking.
+                </Text>
+                <TouchableOpacity
+                  onPress={handleCouponPress}
+                  className="mt-3"
+                  activeOpacity={0.85}>
+                  <Text className="font-poppinsSemiBold text-[13px] text-[#065F46] underline">
+                    Change Coupon
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <CouponCard
+                className="mt-1"
+                subtitle={couponCardSubtitle}
+                ctaLabel="Check Available Coupons"
+                onPress={handleCouponPress}
+              />
+            )}
+            {couponError ? (
+              <Text className="text-primary2 font-poppins text-xs mt-2">
+                {couponError}
+              </Text>
+            ) : null}
+
             {addressDetail ? (
               <View className="mt-5">
                 <Text className="font-poppinsSemiBold text-[16px] text-[#1D293D] mb-3">
@@ -1092,6 +1363,20 @@ const BookingSummary = () => {
           </Text>
         ) : null}
       </View>
+      <CouponSelectionSheet
+        isVisible={isCouponSheetVisible}
+        onClose={handleCouponSheetClose}
+        coupons={availableCoupons}
+        selectedCouponId={selectedCouponId}
+        onSelectCoupon={handleSelectCoupon}
+        onApply={handleApplyCoupon}
+        couponCode={couponCodeInput}
+        onCouponCodeChange={handleCouponCodeChange}
+        onCheckCoupon={handleCheckCouponCode}
+        isApplyDisabled={!selectedCoupon || isApplyingCoupon}
+        isApplying={isApplyingCoupon}
+        maxSavingsLabel={appliedCouponSavingsLabel}
+      />
     </View>
   );
 };
