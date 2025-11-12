@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, SafeAreaView, ScrollView, StatusBar, Platform } from 'react-native';
+import { View, SafeAreaView, ScrollView, StatusBar, Platform, Text, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import BannerSlider from '../../components/Sliders';
 import ServiceCard from '../../components/Cards/Service';
 import Header from '../../components/Common/Header';
+import TalkToAstrologerCard from '../../components/Cards/TalkToAstrologerCard';
+import CardHeading from '../../components/Headings/CardHeading';
+import HomeProductCard from '../../components/Cards/HomeProducts';
 
 const Home = ({ navigation }) => {
   const services = [
@@ -48,51 +51,62 @@ const Home = ({ navigation }) => {
           paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         }}
       >
-        {/* Header */}
-        <View className="z-10"> {/* Higher z-index to make sure the header is above the gradient */}
+
+        <View className="z-10">
           <Header />
         </View>
 
-        {/* Gradient Background */}
-        <LinearGradient
-          colors={['#FF8A3D', '#FFB27D', '#FFD4B3', '#FFFFFF']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 0.5 }}
-          className="absolute top-[20px] left-0 right-0 h-[100%]"
-        />
-
-        {/* Scrollable Content */}
         <ScrollView
-          className="flex-1 px-6"
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* 🔹 Main Content Section */}
-          <View>
+          <LinearGradient
+            colors={['#FF8A3D', '#FFB27D', '#FFD4B3', '#FFFFFF']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.3 }}
+            className="absolute  left-0 right-0 h-[100%]"
+          />
+          <View className="flex-1 px-6 flex flex-col gap-y-4">
             <BannerSlider />
 
-            <View className="flex-row flex-wrap gap-4 mt-4">
-              {services.map(service => (
-                <View key={service.id} style={{ width: '48%' }} className="flex justify-between items-center">
-                  <ServiceCard
-                    image={service.image}
-                    title={service.title}
-                    description={service.description}
-                    onPress={() => handleServicePress(service)}
-                  />
-                </View>
-              ))}
+            <TalkToAstrologerCard />
+            <View>
+              <CardHeading
+                titleBlack="Our"
+                titleGradient="Services"
+                onViewAllPress={() => navigation.navigate('AstrologersList')}
+              />
+              <View className="flex-row flex-wrap gap-4  ">
+                {services.map(service => (
+                  <View key={service.id} style={{ width: '47%' }} className="flex justify-between items-center">
+                    <ServiceCard
+                      image={service.image}
+                      title={service.title}
+                      description={service.description}
+                      onPress={() => handleServicePress(service)}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View>
+              <CardHeading
+                titleBlack="Our"
+                titleGradient="Products"
+                onViewAllPress={() => navigation.navigate('AstrologersList')}
+              />
+              <HomeProductCard
+                image={{ uri: 'https://via.placeholder.com/300x300' }}
+                title="Sacred Rudraksha Bead"
+                price={3520}
+                onButtonPress={() => console.log('Add to Cart')}
+                onAddToCart={() => console.log('Card Pressed')}
+              />
             </View>
           </View>
-
-          {/* 🔹 Spacer */}
           <View className="h-16" />
         </ScrollView>
 
-        {/* 🔹 Floating Cart Button */}
-        <View className="absolute bottom-10 left-1/2 -translate-x-1/2">
-          {/* <FloatingCartButton /> */}
-        </View>
       </SafeAreaView>
     </View>
   );
