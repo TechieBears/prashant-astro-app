@@ -1,50 +1,23 @@
-import { MMKV } from 'react-native-mmkv';
+import { storage } from "./store";
 
-let mmkvInstance;
-
-try {
-  mmkvInstance = new MMKV();
-} catch (error) {
-  console.warn(
-    'MMKV unavailable, falling back to in-memory storage. Disable remote debugging for persistent storage.',
-    error
-  );
-}
-
-const memoryStore = {};
-
-const getMemoryValue = (key) => {
-  if (Object.prototype.hasOwnProperty.call(memoryStore, key)) {
-    return memoryStore[key];
-  }
-  return null;
+const Storage = {
+    setItem: (key, value) => storage.set(key, typeof value === 'object' ? JSON.stringify(value) : value),
+    getItem: (key) => {
+        const value = storage.getString(key);
+        try {
+            return value && typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))
+                ? JSON.parse(value)
+                : value;
+        } catch (error) {
+            console.error("Error parsing JSON", error);
+            return value;
+        }
+    },
+    removeItem: (key) => storage.delete(key),
+    clear: () => storage.clearAll(),
+    multiRemove: (keys) => {
+        keys.forEach(key => storage.delete(key));
+    },
 };
 
-export const mmkvStorage = mmkvInstance
-  ? {
-      setItem: (key, value) => {
-        mmkvInstance.set(key, value);
-        return Promise.resolve(true);
-      },
-      getItem: (key) => {
-        const value = mmkvInstance.getString(key);
-        return Promise.resolve(value);
-      },
-      removeItem: (key) => {
-        mmkvInstance.delete(key);
-        return Promise.resolve();
-      },
-    }
-  : {
-      setItem: (key, value) => {
-        memoryStore[key] = value;
-        return Promise.resolve(true);
-      },
-      getItem: (key) => Promise.resolve(getMemoryValue(key)),
-      removeItem: (key) => {
-        delete memoryStore[key];
-        return Promise.resolve();
-      },
-    };
-
-export default mmkvStorage;
+export default Storage;

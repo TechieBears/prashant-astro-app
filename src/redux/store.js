@@ -1,30 +1,38 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import { combineReducers } from '@reduxjs/toolkit';
+import { configureStore } from "@reduxjs/toolkit";
+import { persistReducer } from 'redux-persist';
+import { combineReducers } from 'redux';
 import authReducer from './slices/authSlice';
-import mmkvStorage from './storage';
+import { MMKV } from 'react-native-mmkv';
+
+export const storage = new MMKV();
 
 const persistConfig = {
-  key: 'root',
-  storage: mmkvStorage,
-  whitelist: ['auth'],
+    key: 'astroguid',
+    version: 1,
+    storage: {
+        getItem: (key) => new Promise((resolve) => resolve(storage.getString(key))),
+        setItem: (key, value) => new Promise((resolve) => {
+            storage.set(key, value);
+            resolve();
+        }),
+        removeItem: (key) => new Promise((resolve) => {
+            storage.delete(key);
+            resolve();
+        }),
+    },
 };
 
-const rootReducer = combineReducers({
-  auth: authReducer,
+const rootReducers = combineReducers({
+     auth: authReducer,
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducers);
 
 export const store = configureStore({
-  reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
-      },
-    }),
+    reducer: persistedReducer,
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            immutableCheck: false,
+            serializableCheck: false,
+        }),
 });
-
-export const persistor = persistStore(store);
-export default store;
