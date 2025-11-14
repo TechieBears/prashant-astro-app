@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, PanResponder } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Home07Icon, HandPrayerIcon, ShoppingCart02Icon, ShoppingBag02Icon, UserIcon } from 'hugeicons-react-native'
@@ -20,88 +20,18 @@ import Address from '../screens/Profile/Address/index';
 import AddUpdateAddress from '../screens/Profile/Address/AddUpdateAddress';
 import About from '../screens/Profile/About';
 import CustomerSupport from '../screens/Profile/CustomerSupport';
+import Cart from '../screens/Cart/Cart';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-const { height } = Dimensions.get('window');
-
-// Cart Bottom Sheet Modal Component
-const CartBottomSheet = ({ visible, onClose }) => {
-  const translateY = useRef(new Animated.Value(height)).current;
-
-  React.useEffect(() => {
-    if (visible) {
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 50,
-        friction: 8,
-      }).start();
-    } else {
-      Animated.timing(translateY, {
-        toValue: height,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return gestureState.dy > 5;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          onClose();
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      <View className="flex-1 justify-end">
-        <TouchableOpacity
-          className="flex-1 bg-black opacity-50"
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <Animated.View
-          className="bg-white rounded-t-3xl max-h-[90%] min-h-[50%] shadow-lg"
-          style={[{ transform: [{ translateY }] }]}
-          {...panResponder.panHandlers}
-        >
-          <View className="w-10 h-1 bg-gray-300 rounded-full self-center my-3" />
-          <View className="p-5">
-            <Text className="text-2xl font-bold text-gray-800">Shopping Cart</Text>
-            <Text className="text-base text-gray-600 mt-2">Your cart items will appear here</Text>
-          </View>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
-};
-
 // Custom Tab Bar Component
 const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const [cartVisible, setCartVisible] = useState(false);
+  const handleCartPress = () => {
+    const parentNavigation = navigation.getParent() ?? navigation;
+    if (parentNavigation?.navigate) {
+      parentNavigation.navigate('Cart');
+    }
+  };
 
   return (
     <>
@@ -145,7 +75,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
 
           {/* Cart Button - Elevated with proper border */}
           <TouchableOpacity
-            onPress={() => setCartVisible(true)}
+            onPress={handleCartPress}
             className="items-center justify-center"
             activeOpacity={0.8}
           >
@@ -190,11 +120,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
         </View>
       </View>
 
-      {/* Cart Bottom Sheet Modal */}
-      <CartBottomSheet
-        visible={cartVisible}
-        onClose={() => setCartVisible(false)}
-      />
     </>
   );
 };
@@ -220,6 +145,7 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="Cart" component={Cart} />
       <Stack.Screen name="ServiceDetails" component={ServiceDetails} />
       <Stack.Screen name="ProductDetails" component={ProductDetails} />
       <Stack.Screen name="ProductSummary" component={ProductSummary} />
