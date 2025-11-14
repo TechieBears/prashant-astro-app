@@ -1,5 +1,5 @@
 import { View, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, Platform } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import BackButton from '../../../components/Buttons/BackButton'
 import TextInput from '../../../components/Inputs/TextInput'
@@ -7,9 +7,12 @@ import SelectDropdown from '../../../components/Inputs/SelectDropdown'
 import GradientButton from '../../../components/Buttons/GradientButton'
 import Button from '../../../components/Buttons/Button'
 import { Tick02Icon } from 'hugeicons-react-native'
+import { updateMyAddress, addMyAddress } from '../../../services/api'
 
-export default function AddUpdateAddress() {
-    const { control, handleSubmit, formState: { errors } } = useForm({
+export default function AddUpdateAddress({ route, navigation }) {
+    const { addressData, addressId } = route?.params || {};
+    const [loading, setLoading] = useState(false);
+    const { control, handleSubmit, formState: { errors }, setValue } = useForm({
         defaultValues: {
             firstName: '',
             lastName: '',
@@ -24,6 +27,21 @@ export default function AddUpdateAddress() {
     const [selectedState, setSelectedState] = useState('')
     const [selectedCity, setSelectedCity] = useState('')
     const [isDefaultAddress, setIsDefaultAddress] = useState(false)
+
+    useEffect(() => {
+        if (addressData) {
+            setValue('firstName', addressData.firstName || '');
+            setValue('lastName', addressData.lastName || '');
+            setValue('phoneNumber', addressData.phoneNumber || '');
+            setValue('address', addressData.address || '');
+            setValue('zipCode', addressData.postalCode || '');
+            setAddressType(addressData.addressType || 'Home');
+            setSelectedCountry(addressData.country?.toLowerCase() || '');
+            setSelectedState(addressData.state?.toLowerCase() || '');
+            setSelectedCity(addressData.city?.toLowerCase() || '');
+            setIsDefaultAddress(addressData.isDefault || false);
+        }
+    }, [addressData, setValue]);
 
     const addressTypes = ['Home', 'Office', 'Friend', 'Other']
 
@@ -45,16 +63,55 @@ export default function AddUpdateAddress() {
         { label: 'Bangalore', value: 'bangalore' },
     ]
 
-    const onSubmit = (data) => {
-        const formData = {
-            ...data,
-            addressType,
-            country: selectedCountry,
-            state: selectedState,
-            city: selectedCity,
-            isDefaultAddress
+    const onSubmit = async (data) => {
+        try {
+            setLoading(true);
+            const formData = {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+                address: data.address,
+                postalCode: data.zipCode,
+                addressType : addressType?.toLowerCase(),
+                country: selectedCountry,
+                state: selectedState,
+                city: selectedCity,
+                isDefault: isDefaultAddress
+            };
+            
+            let response;
+            if (addressId) {
+                console.log('📝 Updating address:', formData);
+                response = await updateMyAddress(addressId, formData);
+                console.log('📝 Update response:', response);
+            } else {
+                console.log('➕ Adding new address:', formData);
+                response = await addMyAddress(formData);
+                console.log('➕ Add response:', response);
+            }
+            
+            if (response?.success) {
+                console.log('✅ Address saved successfully');
+                navigation.goBack();
+            }
+        } catch (error) {
+            console.error('❌ Error saving address:', error);
+            console.error('❌ Error details:', {
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status,
+                statusText: error?.response?.statusText
+            });
+            
+            // Show user-friendly error message
+            const errorMessage = error?.response?.data?.message || 
+                               error?.response?.data?.error || 
+                               error?.message || 
+                               'Failed to save address';
+            console.log('🚨 User Error Message:', errorMessage);
+        } finally {
+            setLoading(false);
         }
-        console.log('Form Data:', formData)
     }
 
     const handleCancel = () => {
@@ -219,12 +276,7 @@ export default function AddUpdateAddress() {
 
                     {/* Buttons */}
                     <View className="flex flex-row gap-3 mb-6">
-                        <View className="flex-1">
-                            <GradientButton
-                                title="Save Address"
-                                onPress={handleSubmit(onSubmit)}
-                            />
-                        </View>
+                       
                         <View className="flex-1">
                             <Button
                                 title="Cancel"
@@ -232,6 +284,13 @@ export default function AddUpdateAddress() {
                                 onPress={handleCancel}
                                 containerStyle="border-2 border-gray-800"
                                 textStyle="text-gray-800 text-xl font-bold"
+                            />
+                        </View>
+                         <View className="flex-1">
+                            <GradientButton
+                                title={loading ? (addressId ? "Updating..." : "Adding...") : "Save Address"}
+                                onPress={handleSubmit(onSubmit)}
+                                disabled={loading}
                             />
                         </View>
                     </View>

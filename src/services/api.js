@@ -73,9 +73,9 @@ export const updateUserProfile = async (userData) => {
 };
 
 
-export const getMyProductsOrders = async (userData) => {
+export const getMyProductsOrders = async () => {
   try {
-    const response = await apiClient.get('/product-order/public/get-all', userData);
+    const response = await apiClient.get('/product-order/public/get-all', );
     return response.data;
   } catch (error) {
     console.log('Get my orders error:', error);
@@ -83,9 +83,9 @@ export const getMyProductsOrders = async (userData) => {
   }
 };
 
-export const getMyServicesOrders = async (userData) => {
+export const getMyServicesOrders = async () => {
   try {
-    const response = await apiClient.get('/service-order/public/get-all', userData);
+    const response = await apiClient.get('/service-order/public/get-all', );
     return response.data;
   } catch (error) {
     console.log('Get my orders error:', error);
@@ -93,6 +93,45 @@ export const getMyServicesOrders = async (userData) => {
   }
 };
 
+export const getMyAddress = async () => {
+  try {
+    const response = await apiClient.get('/customer-address/get-all');
+    return response.data;
+  } catch (error) {
+    console.log('Get my orders error:', error);
+    throw error;
+  }
+};
+
+export const addMyAddress = async (addressData) => {
+  try {
+    const response = await apiClient.post(`/customer-address/create`, addressData);
+    return response.data;
+  } catch (error) {
+    console.log('Add address error:', error);
+    throw error;
+  }
+};
+
+export const updateMyAddress = async (addressId, addressData) => {
+  try {
+    const response = await apiClient.put(`/customer-address/update?id=${addressId}`, addressData);
+    return response.data;
+  } catch (error) {
+    console.log('Update address error:', error);
+    throw error;
+  }
+};
+
+export const deleteMyAddress = async (addressId) => {
+  try {
+    const response = await apiClient.delete(`/customer-address/delete?id=${addressId}`);
+    return response.data;
+  } catch (error) {
+    console.log('Delete address error:', error);
+    throw error;
+  }
+};
 
 export const changePassword = async (passwordData) => {
   try {
