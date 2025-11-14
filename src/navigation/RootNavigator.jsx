@@ -11,8 +11,8 @@ const RootNavigator = () => {
   // isAuthenticated, 
   const { skip, isAuthenticated } = useSelector(state => state.auth);
   const [showSplash, setShowSplash] = useState(true);
-  // const isAuthenticated = false;
-  // const skip = false;
+  // const isAuthenticated = true;
+  // const skip = true;
   // Show splash screen first
    // Show the splash screen for 2 seconds
   useEffect(() => {
@@ -20,7 +20,7 @@ const RootNavigator = () => {
       setShowSplash(false);  // Hide splash screen after 2 seconds
     }, 2000);  // 2 seconds timeout
   }, []);
-
+  console.log('skip', skip, isAuthenticated)
   if (showSplash) {
     return (
       <>

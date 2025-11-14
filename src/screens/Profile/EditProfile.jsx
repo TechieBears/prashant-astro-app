@@ -7,18 +7,23 @@ import TextInput from '../../components/Inputs/TextInput';
 import RadioButton from '../../components/Inputs/RadioInput';
 import FileInput from '../../components/Inputs/FileInput';
 import SelectDropdown from '../../components/Inputs/SelectDropdown';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function EditProfile() {
+  const dispatch = useDispatch();
+  const user = useSelector(state => state.auth.user);
+  console.log('user', user)
   const [gender, setGender] = useState('Male');
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const { control, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
-      fullName: '',
+      title: user?.title || '',
+      firstName: user?.firstName || '',
+      lastName: user?.lastName ||  '',
       email: '',
-      phoneNumber: '',
-      password: '',
-      confirmPassword: '',
+      mobileNo: user?.mobileNo || '',
+      
     }
   });
 
@@ -137,7 +142,7 @@ export default function EditProfile() {
           <TextInput
             control={control}
             label="Phone Number *"
-            name="phoneNumber"
+            name="mobileNo"
             placeholder="Enter phone number"
             keyboardType="phone-pad"
             containerStyle="mb-0"
