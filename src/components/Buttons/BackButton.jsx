@@ -3,10 +3,10 @@ import React from 'react'
 import { ArrowLeft02Icon, Add01Icon } from 'hugeicons-react-native'
 import { useNavigation } from '@react-navigation/native'
 
-export default function BackButton({ heading, showAddButton, onAddPress }) {
+export default function BackButton({ heading, showAddButton, onAddPress, bg='background'}) {
     const navigation = useNavigation();
     return (
-        <View className='bg-background flex flex-row items-center justify-between'>
+            <View className={`bg-${bg} flex flex-row items-center justify-between`}>
             <View className='flex flex-row items-center'>
                 <TouchableOpacity onPress={() => navigation.goBack()} className='p-3 rounded-lg bg-white mr-4 border border-[#00000026]'>
                     <ArrowLeft02Icon size={25} />
