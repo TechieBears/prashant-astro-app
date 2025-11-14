@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 import BackButton from '../../components/Buttons/BackButton';
 
-export default function PrivacyPolicy() {
+export default function MyOrders() {
 
   return (
     <SafeAreaView
@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
       }}
     >
       <ScrollView className='px-6 py-4'>
-        <BackButton heading={'Privacy Policy'} />
+        <BackButton heading={'My Orders'} />
         <View className='flex mt-6 gap-3'>
 
         </View>

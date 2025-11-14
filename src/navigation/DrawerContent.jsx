@@ -22,24 +22,25 @@ import {
   GiftIcon,
   Settings01Icon,
 } from 'hugeicons-react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch,useSelector } from 'react-redux';
 import { moderateScale, scale } from 'react-native-size-matters';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 const DrawerContent = (props) => {
   const { navigation } = props;
   const dispatch = useDispatch();
+  const user = useSelector(state => state.auth.user);
 
   const menuItems = [
     { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
     { icon: CalendarCheckIn01Icon, label: 'My Orders', color: '#00786F', redirect: 'MyOrders' },
     { icon: Location06Icon, label: 'My Address', color: '#00786F', redirect: 'Address' },
     { icon: PolicyIcon, label: 'Privacy Policy', color: '#62748E', redirect: 'PrivacyPolicy' },
-    { icon: GiftIcon, label: 'Refer & Earn', color: '#FB2C36', redirect: 'CustomerSupport' },
-    { icon: CallIcon, label: 'Call History', color: '#E60076', redirect: 'CustomerSupport' },
+    { icon: GiftIcon, label: 'Refer & Earn', color: '#FB2C36', redirect: 'ReferEarn' },
+    { icon: CallIcon, label: 'Call History', color: '#E60076', redirect: 'CallHistory' },
     { icon: HeadsetIcon, label: 'Customer Support', color: '#246DF2', redirect: 'CustomerSupport' },
     { icon: InformationDiamondIcon, label: 'About Us', color: '#00B8DB', redirect: 'About' },
-    { icon: Settings01Icon, label: 'Setting', color: '#7C86FF', redirect: 'About' },
+    // { icon: Settings01Icon, label: 'Setting', color: '#7C86FF', redirect: 'About' },
   ];
 
   const handleLogout = () => {
@@ -81,20 +82,31 @@ const DrawerContent = (props) => {
         <View style={{ marginTop: hp('1%') }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#E2E8F0', paddingBottom: hp('2%') }}>
             <View style={{ width: wp('12%'), height: wp('12%'), borderRadius: wp('8%'), overflow: 'hidden' }}>
-              <Image
-                source={{ uri: 'https://picsum.photos/400/400?random=1' }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
+              {
+                user.profileImage ? (
+                  <Image
+                    source={{ uri: user.profileImage }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: 'https://picsum.photos/400/400?random=1' }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                )
+              }
+
             </View>
             <View style={{ marginLeft: wp('4%'), flex: 1 }}>
               <Text style={{ fontSize: moderateScale(15), fontWeight: '600', color: '#111827' }}>
-                Sid Srirams
+                {user?.firstName + ' ' + user?.lastName}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: hp('0.5%') }}>
                 <Mail01Icon size={moderateScale(14)} color="#62748E" />
                 <Text style={{ fontSize: moderateScale(10), color: '#64748B', marginLeft: wp('1%'), flexShrink: 1 }}>
-                  sidsriramssss@gmail.com
+                  {user?.email}
                 </Text>
               </View>
             </View>
@@ -137,7 +149,7 @@ const DrawerContent = (props) => {
             gap: hp('1%'),
             flexDirection: 'row',
             flexWrap: 'wrap',
-            alignItems : 'flex-start'
+            alignItems: 'flex-start'
           }}
         >
           {/* Logout Button */}
@@ -167,7 +179,7 @@ const DrawerContent = (props) => {
               backgroundColor: '#FB2C36',
               borderRadius: moderateScale(10),
               paddingVertical: hp('1.2%'),
-              paddingHorizontal: wp('5%'), 
+              paddingHorizontal: wp('5%'),
               flexDirection: 'row',
               justifyContent: 'center',
               alignItems: 'center',

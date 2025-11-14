@@ -25,6 +25,8 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+let maintenanceAlertShown = false;
+
 // Response interceptor
 apiClient.interceptors.response.use(
   // (response) => response,
