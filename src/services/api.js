@@ -72,6 +72,28 @@ export const updateUserProfile = async (userData) => {
   }
 };
 
+
+export const getMyProductsOrders = async (userData) => {
+  try {
+    const response = await apiClient.get('/product-order/public/get-all', userData);
+    return response.data;
+  } catch (error) {
+    console.log('Get my orders error:', error);
+    throw error;
+  }
+};
+
+export const getMyServicesOrders = async (userData) => {
+  try {
+    const response = await apiClient.get('/service-order/public/get-all', userData);
+    return response.data;
+  } catch (error) {
+    console.log('Get my orders error:', error);
+    throw error;
+  }
+};
+
+
 export const changePassword = async (passwordData) => {
   try {
     const response = await apiClient.put('/user/password', passwordData);
