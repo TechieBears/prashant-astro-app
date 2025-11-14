@@ -25,6 +25,7 @@ import {
 import { useDispatch,useSelector } from 'react-redux';
 import { moderateScale, scale } from 'react-native-size-matters';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { logout } from '../redux/slices/authSlice';
 
 const DrawerContent = (props) => {
   const { navigation } = props;
