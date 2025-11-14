@@ -51,20 +51,9 @@ export const logoutApi = async () => {
   }
 };
 
-// User APIs
-export const getUserProfile = async () => {
-  try {
-    const response = await apiClient.get('/user/profile');
-    return response.data;
-  } catch (error) {
-    console.log('Get profile error:', error);
-    throw error;
-  }
-};
-
 export const updateUserProfile = async (userData) => {
   try {
-    const response = await apiClient.put('/user/profile', userData);
+    const response = await apiClient.put('/customer-users/update', userData);
     return response.data;
   } catch (error) {
     console.log('Update profile error:', error);

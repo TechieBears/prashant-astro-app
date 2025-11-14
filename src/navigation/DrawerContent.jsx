@@ -30,6 +30,7 @@ const DrawerContent = (props) => {
   const { navigation } = props;
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
+  const [imgError, setImgError] = React.useState(false);
 
   const menuItems = [
     { icon: PencilEdit01Icon, label: 'Edit Basic Details', color: '#F97316', redirect: 'EditProfile' },
@@ -64,6 +65,18 @@ const DrawerContent = (props) => {
     }
   };
 
+  const isValidUrl = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+ const imageUrl =
+    isValidUrl(user?.profileImage) && !imgError
+      ? user.profileImage
+      : 'https://picsum.photos/400/400?random=1';
   return (
     <DrawerContentScrollView {...props} style={{ flex: 1, backgroundColor: 'white' }}>
       <View style={{ flex: 1, paddingHorizontal: wp('2%') }}>
@@ -82,21 +95,12 @@ const DrawerContent = (props) => {
         <View style={{ marginTop: hp('1%') }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#E2E8F0', paddingBottom: hp('2%') }}>
             <View style={{ width: wp('12%'), height: wp('12%'), borderRadius: wp('8%'), overflow: 'hidden' }}>
-              {
-                user.profileImage ? (
-                  <Image
-                    source={{ uri: user.profileImage }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Image
-                    source={{ uri: 'https://picsum.photos/400/400?random=1' }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                )
-              }
+              <Image
+                source={{ uri: imageUrl }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+                onError={() => setImgError(true)}
+              />
 
             </View>
             <View style={{ marginLeft: wp('4%'), flex: 1 }}>

@@ -8,26 +8,30 @@ import RadioButton from '../../components/Inputs/RadioInput';
 import FileInput from '../../components/Inputs/FileInput';
 import SelectDropdown from '../../components/Inputs/SelectDropdown';
 import { useDispatch, useSelector } from 'react-redux';
+import GradientButton from '../../components/Buttons/GradientButton';
+import { updateUserProfile } from '../../services/api';
+import { setUser } from '../../redux/slices/authSlice';
 
-export default function EditProfile() {
+export default function EditProfile({ navigation }) {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
   console.log('user', user)
-  const [gender, setGender] = useState('Male');
+  const [gender, setGender] = useState(user?.gender || 'Male');
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { control, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
       title: user?.title || '',
       firstName: user?.firstName || '',
-      lastName: user?.lastName ||  '',
-      email: '',
+      lastName: user?.lastName || '',
+      email: user?.email || '',
       mobileNo: user?.mobileNo || '',
-      
+
     }
   });
 
-    const titleOptions = [
+  const titleOptions = [
     { label: 'Mr', value: 'Mr' },
     { label: 'Mrs', value: 'Mrs' },
     { label: 'Miss', value: 'Miss' },
@@ -73,9 +77,35 @@ export default function EditProfile() {
     });
   };
 
-  // You can define a handleSubmit function here if needed.
-  const onSubmit = (data) => {
-    console.log(data);
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      const payload = {
+        title: data.title,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gender: gender.toLowerCase(),
+        email: data.email,
+        profileImage: selectedFile ? '{cloudinary-url}' : user?.profileImage || '',
+        mobileNo: data.mobileNo,
+        referralCode: user?.referralCode || '',
+        isActive: true
+      };
+      
+      console.log('📝 Updating profile:', payload);
+      const response = await updateUserProfile(payload);
+      console.log('📝 Update response:', response);
+      
+      if (response?.success) {
+        dispatch(setUser({ user: response?.data }));
+        console.log('✅ Profile updated successfully');
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('❌ Error updating profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -87,7 +117,7 @@ export default function EditProfile() {
     >
       <ScrollView className='px-6 py-4'>
         <BackButton heading={'Edit Basic Details'} />
-        <View className='flex mt-6 gap-3'> 
+        <View className='flex mt-6 gap-3'>
           <View className="mb-4">
             <SelectDropdown
               label="Title *"
@@ -99,7 +129,7 @@ export default function EditProfile() {
             />
           </View>
           {/* Full Name Input */}
-         {/* First Name Input */}
+          {/* First Name Input */}
           <View className="mb-4">
             <TextInput
               control={control}
@@ -173,14 +203,23 @@ export default function EditProfile() {
             />
           </View>
           <View>
-             <FileInput
-                    label="Upload Profile Picture"
-                    placeholder="Choose file"
-                    onPress={handleFileSelect}
-                    selectedFile={selectedFile}
-                    error={error}
-                  />
+            <FileInput
+              label="Upload Profile Picture"
+              placeholder="Choose file"
+              onPress={handleFileSelect}
+              selectedFile={selectedFile}
+              error={error}
+            />
           </View>
+         <View className='mt-2'>
+           <GradientButton
+            title={loading ? 'Updating...' : 'Update'}
+            onPress={handleSubmit(onSubmit)}
+            colors={['#FF8835', '#FF5858']}
+            containerStyle="w-full"
+            disabled={loading}
+          />
+         </View>
         </View>
       </ScrollView>
     </SafeAreaView>
