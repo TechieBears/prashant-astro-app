@@ -1288,7 +1288,7 @@ const BookingSummary = () => {
                   Address:
                 </Text>
                 <View
-                  className="bg-white rounded-[18px] border border-[#E4E9F5] px-4 py-3"
+                  className="bg-white rounded-[10px] border border-[#E4E9F5] px-4 py-3"
                   style={styles.cardShadowLight}>
                   <Text className="font-poppinsSemiBold text-[15px] text-[#1D293D]">
                     {addressName}
